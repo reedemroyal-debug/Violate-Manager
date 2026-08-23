@@ -1,0 +1,2 @@
+const {SlashCommandBuilder,EmbedBuilder}=require("discord.js");
+module.exports={data:new SlashCommandBuilder().setName("help").setDescription("Show all working commands"),execute:async i=>i.reply({embeds:[new EmbedBuilder().setTitle("VIOLATE MANAGER").setDescription("**Moderation**\n/kick /ban /warn\n\n**Info**\n/ping /help /serverinfo /userinfo\n\n**Giveaway**\n/giveaway create\n\n**Tickets**\n/ticket panel /ticket create /ticket close /ticket reopen /ticket claim /ticket unclaim /ticket delete")]})};

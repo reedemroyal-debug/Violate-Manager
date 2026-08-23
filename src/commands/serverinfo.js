@@ -1,0 +1,2 @@
+const {SlashCommandBuilder,EmbedBuilder}=require("discord.js");
+module.exports={data:new SlashCommandBuilder().setName("serverinfo").setDescription("Show server information"),execute:async i=>{const g=i.guild;await i.reply({embeds:[new EmbedBuilder().setTitle("📊 "+g.name).addFields({name:"Members",value:String(g.memberCount),inline:true},{name:"Channels",value:String(g.channels.cache.size),inline:true},{name:"Owner",value:`<@${g.ownerId}>`,inline:true},{name:"ID",value:g.id})]})}};

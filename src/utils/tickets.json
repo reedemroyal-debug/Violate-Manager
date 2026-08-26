@@ -1,0 +1,45 @@
+{
+  "1538572310083149945": {
+    "categoryId": "1541452383408889939",
+    "panelChannelId": "1541452387644870667",
+    "logChannelId": "1541452386021679154",
+    "staffRoleId": null,
+    "tickets": {
+      "1787581299632": {
+        "channelId": "1541452435548151893",
+        "userId": "1350726344648036402",
+        "createdAt": 1787581299632,
+        "closed": true,
+        "closedAt": 1787581304444
+      },
+      "1541461615814123531": {
+        "channelId": "1541461615814123531",
+        "userId": "1350726344648036402",
+        "open": false,
+        "createdAt": 1787583488321,
+        "closedAt": 1787583495037,
+        "closedBy": "1350726344648036402"
+      },
+      "1541461957968662588": {
+        "channelId": "1541461957968662588",
+        "userId": "1350726344648036402",
+        "open": false,
+        "createdAt": 1787583569841,
+        "closedAt": 1787583585287,
+        "closedBy": "1350726344648036402"
+      }
+    },
+    "setup": {
+      "title": "TICKET SUPPORT",
+      "description": "Testing",
+      "color": "#5865F2",
+      "image": "",
+      "thumbnail": "",
+      "buttonText": "Support",
+      "buttonEmoji": "👑",
+      "categoryId": "1538827501344784521",
+      "staffRoleId": "1538728266016497724",
+      "logChannelId": "1541052306722922636"
+    }
+  }
+}

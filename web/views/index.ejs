@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIOLATE MANAGER</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<% if (!user) { %>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="logo-box">V</div>
+
+    <h1>VIOLATE <span>MANAGER</span></h1>
+
+    <p>
+      Manage your Discord servers with
+      VIOLATE MANAGER.
+    </p>
+
+    <a href="/login" class="login-btn">
+      ◈ Login with Discord
+    </a>
+
+    <small>
+      Secure Discord OAuth2 authentication
+    </small>
+  </div>
+</div>
+
+<% } else { %>
+
+<div class="layout">
+
+  <aside class="sidebar">
+
+    <div class="logo">
+      <div class="logo-box">V</div>
+
+      <div>
+        <h2>VIOLATE</h2>
+        <span>MANAGER</span>
+      </div>
+    </div>
+
+    <nav>
+      <a class="active">⌂ Dashboard</a>
+      <a>🛡 Moderation</a>
+      <a>🎫 Tickets</a>
+      <a>🎵 Music</a>
+      <a>🎁 Giveaways</a>
+      <a>📋 Logs</a>
+      <a>👥 Roles</a>
+      <a>⚙ Settings</a>
+    </nav>
+
+    <div class="bot-status">
+      <span class="dot"></span>
+
+      <div>
+        <b>Bot Online</b>
+        <small>VIOLATE MANAGER</small>
+      </div>
+    </div>
+
+  </aside>
+
+  <main>
+
+    <header>
+
+      <div>
+        <p class="eyebrow">SERVER MANAGEMENT</p>
+
+        <h1>Dashboard</h1>
+
+        <p class="muted">
+          Welcome back, <%= user.username %> 👋
+        </p>
+      </div>
+
+      <a href="/logout" class="logout">
+        Logout
+      </a>
+
+    </header>
+
+    <section class="panel">
+
+      <div class="panel-head">
+        <p class="eyebrow">YOUR DISCORD SERVERS</p>
+
+        <h2>Select a Server</h2>
+
+        <p class="muted">
+          Choose a server to manage with VIOLATE MANAGER.
+        </p>
+      </div>
+
+      <div class="servers">
+
+        <% if (!guilds || guilds.length === 0) { %>
+
+          <div class="empty">
+            <h3>No servers found</h3>
+            <p>
+              Make sure you're logged into the correct Discord account.
+            </p>
+          </div>
+
+        <% } %>
+
+        <% guilds.forEach(guild => { %>
+
+          <a
+            class="server-card"
+            href="/server/<%= guild.id %>"
+          >
+
+            <% if (guild.icon) { %>
+
+              <img
+                src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png?size=128"
+                alt="<%= guild.name %>"
+              >
+
+            <% } else { %>
+
+              <div class="server-icon">
+                <%= guild.name.charAt(0).toUpperCase() %>
+              </div>
+
+            <% } %>
+
+            <div class="server-info">
+
+              <strong>
+                <%= guild.name %>
+              </strong>
+
+              <small>
+                <%= guild.owner ? "Owner" : "Server Member" %>
+              </small>
+
+            </div>
+
+            <span class="arrow">→</span>
+
+          </a>
+
+        <% }) %>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+<% } %>
+
+</body>
+</html>

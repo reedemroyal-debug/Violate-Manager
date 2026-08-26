@@ -1,92 +1,75 @@
 const fs = require("fs");
 const path = require("path");
 
-const DB_PATH = path.join(__dirname, "../../tickets.json");
-
-const DEFAULT_CATEGORIES = {
-    general: {
-        name: "General Support",
-        emoji: "🎫",
-        description: "General support and help.",
-        categoryId: null,
-        staffRoles: []
-    },
-
-    partnership: {
-        name: "Partnership",
-        emoji: "🤝",
-        description: "Partnership requests.",
-        categoryId: null,
-        staffRoles: []
-    },
-
-    staff: {
-        name: "Staff Application",
-        emoji: "🛡️",
-        description: "Apply for staff.",
-        categoryId: null,
-        staffRoles: []
-    },
-
-    report: {
-        name: "Report Player",
-        emoji: "🚨",
-        description: "Report a player.",
-        categoryId: null,
-        staffRoles: []
-    }
-};
+const file = path.join(__dirname, "tickets.json");
 
 function load() {
-    if (!fs.existsSync(DB_PATH)) {
-        const data = { guilds: {} };
-        save(data);
-        return data;
-    }
+  if (!fs.existsSync(file)) {
+    return {};
+  }
 
-    try {
-        return JSON.parse(
-            fs.readFileSync(DB_PATH, "utf8")
-        );
-    } catch {
-        const data = { guilds: {} };
-        save(data);
-        return data;
-    }
+  try {
+    return JSON.parse(
+      fs.readFileSync(file, "utf8")
+    );
+  } catch {
+    return {};
+  }
 }
 
 function save(data) {
-    fs.writeFileSync(
-        DB_PATH,
-        JSON.stringify(data, null, 2)
-    );
+  fs.writeFileSync(
+    file,
+    JSON.stringify(data, null, 2)
+  );
 }
 
-function getGuild(data, guildId) {
-    if (!data.guilds[guildId]) {
-        data.guilds[guildId] = {
-            counter: 0,
+function getGuild(guildId) {
+  const data = load();
 
-            panel: {
-                title: "🎫 Support Center",
-                description:
-                    "Select a category below to open a private ticket.",
-                color: 0x5865F2
-            },
+  if (!data[guildId]) {
+    data[guildId] = {
+      setup: {
+        title: "",
+        description: "",
+        color: "#5865F2",
+        image: "",
+        thumbnail: "",
+        buttonText: "Create Ticket",
+        buttonEmoji: "🎫",
+        categoryId: "",
+        staffRoleId: "",
+        logChannelId: ""
+      },
+      tickets: {}
+    };
 
-            categories: structuredClone(
-                DEFAULT_CATEGORIES
-            ),
+    save(data);
+  }
 
-            tickets: {}
-        };
-    }
+  return data[guildId];
+}
 
-    return data.guilds[guildId];
+function updateGuild(guildId, guildData) {
+  const data = load();
+
+  data[guildId] = guildData;
+
+  save(data);
+}
+
+function removeGuild(guildId) {
+  const data = load();
+
+  delete data[guildId];
+
+  save(data);
 }
 
 module.exports = {
-    load,
-    save,
-    getGuild
+  load,
+  save,
+  getGuild,
+  updateGuild,
+  removeGuild
 };

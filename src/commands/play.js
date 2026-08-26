@@ -18,21 +18,25 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const voiceChannel = interaction.member.voice.channel;
+    const voiceChannel =
+      interaction.member.voice.channel;
 
     if (!voiceChannel) {
       return interaction.reply({
-        content: "❌ Pehle voice channel join kar bhai.",
+        content:
+          "❌ Pehle voice channel join kar bhai.",
         ephemeral: true
       });
     }
 
-    const query = interaction.options.getString("query");
+    const query =
+      interaction.options.getString("query");
 
     await interaction.deferReply();
 
     try {
-      const player = interaction.client.musicPlayer;
+      const player =
+        interaction.client.musicPlayer;
 
       if (!player) {
         return interaction.editReply(
@@ -40,62 +44,99 @@ module.exports = {
         );
       }
 
-      await player.play(voiceChannel, query, {
-        nodeOptions: {
-          metadata: interaction
+      await player.play(
+        voiceChannel,
+        query,
+        {
+          nodeOptions: {
+            metadata: interaction,
+
+            // Queue finish hone par
+            // automatically leave nahi karega.
+            leaveOnEnd: false,
+
+            // VC empty hone par leave karega.
+            leaveOnEmpty: true,
+
+            // 5 minutes empty VC.
+            leaveOnEmptyCooldown: 300000,
+
+            // Stop command par normal leave.
+            leaveOnStop: true,
+
+            skipOnNoStream: true
+          }
         }
-      });
-
-      const embed = new EmbedBuilder()
-        .setTitle("🎵 VIOLATE MUSIC")
-        .setDescription(
-          `**🎶 ${query}**\n\n` +
-          `👤 Requested by: ${interaction.user}\n\n` +
-          `Use the controls below to control the music.`
-        )
-        .setFooter({
-          text: "VIOLATE MANAGER • Music System"
-        });
-
-      const controls = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("music_pause")
-          .setEmoji("⏯️")
-          .setLabel("Pause")
-          .setStyle(ButtonStyle.Secondary),
-
-        new ButtonBuilder()
-          .setCustomId("music_skip")
-          .setEmoji("⏭️")
-          .setLabel("Skip")
-          .setStyle(ButtonStyle.Primary),
-
-        new ButtonBuilder()
-          .setCustomId("music_stop")
-          .setEmoji("⏹️")
-          .setLabel("Stop")
-          .setStyle(ButtonStyle.Danger),
-
-        new ButtonBuilder()
-          .setCustomId("music_loop")
-          .setEmoji("🔁")
-          .setLabel("Loop")
-          .setStyle(ButtonStyle.Secondary)
       );
 
-      const extra = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("music_queue")
-          .setEmoji("📜")
-          .setLabel("Queue")
-          .setStyle(ButtonStyle.Secondary),
+      const embed =
+        new EmbedBuilder()
+          .setTitle("🎵 VIOLATE MUSIC")
+          .setDescription(
+            `**🎶 ${query}**\n\n` +
+            `👤 Requested by: ${interaction.user}\n\n` +
+            `Use the controls below.`
+          )
+          .setFooter({
+            text:
+              "VIOLATE MANAGER • Music System"
+          });
 
-        new ButtonBuilder()
-          .setCustomId("music_shuffle")
-          .setEmoji("🔀")
-          .setLabel("Shuffle")
-          .setStyle(ButtonStyle.Secondary)
-      );
+      const controls =
+        new ActionRowBuilder().addComponents(
+
+          new ButtonBuilder()
+            .setCustomId("music_pause")
+            .setEmoji("⏯️")
+            .setLabel("Pause")
+            .setStyle(
+              ButtonStyle.Secondary
+            ),
+
+          new ButtonBuilder()
+            .setCustomId("music_skip")
+            .setEmoji("⏭️")
+            .setLabel("Skip")
+            .setStyle(
+              ButtonStyle.Primary
+            ),
+
+          new ButtonBuilder()
+            .setCustomId("music_stop")
+            .setEmoji("⏹️")
+            .setLabel("Stop")
+            .setStyle(
+              ButtonStyle.Danger
+            ),
+
+          new ButtonBuilder()
+            .setCustomId("music_loop")
+            .setEmoji("🔁")
+            .setLabel("Loop: Off")
+            .setStyle(
+              ButtonStyle.Secondary
+            )
+        );
+
+      const extra =
+        new ActionRowBuilder().addComponents(
+
+          new ButtonBuilder()
+            .setCustomId("music_queue")
+            .setEmoji("📜")
+            .setLabel("Queue")
+            .setStyle(
+              ButtonStyle.Secondary
+            ),
+
+          new ButtonBuilder()
+            .setCustomId("music_shuffle")
+            .setEmoji("🔀")
+            .setLabel("Shuffle")
+            .setStyle(
+              ButtonStyle.Secondary
+            )
+        );
 
       return interaction.editReply({
         embeds: [embed],
@@ -106,7 +147,10 @@ module.exports = {
       });
 
     } catch (error) {
-      console.error("❌ Play error:", error);
+      console.error(
+        "❌ Play error:",
+        error
+      );
 
       return interaction.editReply(
         `❌ Music play nahi hua.\n\`${error.message}\``

@@ -5,32 +5,47 @@ const {
   GatewayIntentBits,
   Collection,
   REST,
-  Routes
+  Routes,
+  ActionRowBuilder,
+  ButtonBuilder
 } = require("discord.js");
 
 const fs = require("fs");
 const path = require("path");
 
 const {
-  createMusicPlayer
+  createMusicPlayer,
+  clearTimers
 } = require("./music/player");
 
-// ===============================
-// ENV CHECK
-// ===============================
+const autoMod =
+  require("./automod/autoMod");
 
-for (const key of [
-  "DISCORD_TOKEN",
-  "CLIENT_ID"
-]) {
-  if (!process.env[key]) {
-    throw new Error(`${key} missing from .env`);
-  }
+const autoModCommand =
+  require("./commands/automod");
+
+const antiNuke =
+  require("./antinuke/antiNuke");
+
+// =====================================
+// ENV CHECK
+// =====================================
+
+if (!process.env.DISCORD_TOKEN) {
+  throw new Error(
+    "DISCORD_TOKEN missing from .env"
+  );
 }
 
-// ===============================
+if (!process.env.CLIENT_ID) {
+  throw new Error(
+    "CLIENT_ID missing from .env"
+  );
+}
+
+// =====================================
 // CLIENT
-// ===============================
+// =====================================
 
 const client = new Client({
   intents: [
@@ -42,46 +57,57 @@ const client = new Client({
   ]
 });
 
-// ===============================
-// COMMAND COLLECTION
-// ===============================
+client.commands =
+  new Collection();
 
-client.commands = new Collection();
+client.musicPlayer =
+  createMusicPlayer(client);
 
-// ===============================
-// MUSIC PLAYER
-// ===============================
+// =====================================
+// COMMAND LOADER
+// =====================================
 
-const musicPlayer = createMusicPlayer(client);
+const commandsPath =
+  path.join(
+    __dirname,
+    "commands"
+  );
 
-client.musicPlayer = musicPlayer;
-
-// ===============================
-// LOAD COMMANDS
-// ===============================
-
-const commandsPath = path.join(
-  __dirname,
-  "commands"
-);
-
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter(file => file.endsWith(".js"));
-
-for (const file of commandFiles) {
-  try {
-    const commandPath = path.join(
-      commandsPath,
-      file
+const commandFiles =
+  fs.readdirSync(commandsPath)
+    .filter(
+      file =>
+        file.endsWith(".js")
     );
 
-    const command = require(commandPath);
+for (
+  const file of commandFiles
+) {
+  try {
+    const commandPath =
+      path.join(
+        commandsPath,
+        file
+      );
 
-    if (!command.data || !command.execute) {
+    delete require.cache[
+      require.resolve(
+        commandPath
+      )
+    ];
+
+    const command =
+      require(commandPath);
+
+    if (
+      !command.data ||
+      typeof command.execute !==
+        "function"
+    ) {
       console.log(
         `⚠️ Skipped invalid command: ${file}`
       );
+
       continue;
     }
 
@@ -102,63 +128,116 @@ for (const file of commandFiles) {
   }
 }
 
-// ===============================
-// ROLE PING SYSTEM
-// ===============================
+// =====================================
+// ROLE PING
+// =====================================
 
-const rolePing = require(
-  "./events/rolePing"
-);
+try {
+  const rolePing =
+    require("./events/rolePing");
+
+  client.on(
+    "messageCreate",
+    async message => {
+      try {
+        await rolePing.execute(
+          message
+        );
+      } catch (error) {
+        console.error(
+          "❌ Role Ping Error:",
+          error
+        );
+      }
+    }
+  );
+
+} catch (error) {
+  console.error(
+    "❌ Role Ping failed:",
+    error
+  );
+}
+
+// =====================================
+// AUTOMOD
+// =====================================
 
 client.on(
   "messageCreate",
   async message => {
     try {
-      await rolePing.execute(message);
+      await autoMod.handle(
+        message
+      );
     } catch (error) {
       console.error(
-        "❌ Role Ping Error:",
+        "❌ AutoMod Error:",
         error
       );
     }
   }
 );
 
-// ===============================
+// =====================================
+// ANTINUKE
+// =====================================
+
+client.on(
+  "guildAuditLogEntryCreate",
+  async entry => {
+    try {
+      await antiNuke.handleAuditLog(
+        entry
+      );
+    } catch (error) {
+      console.error(
+        "❌ AntiNuke Error:",
+        error
+      );
+    }
+  }
+);
+
+// =====================================
 // READY
-// ===============================
+// =====================================
 
 client.once(
   "ready",
   async () => {
+
     console.log(
       `🤖 Logged in as ${client.user.tag}`
     );
 
     try {
-      const rest = new REST({
-        version: "10"
-      }).setToken(
-        process.env.DISCORD_TOKEN
-      );
+      const rest =
+        new REST({
+          version: "10"
+        }).setToken(
+          process.env.DISCORD_TOKEN
+        );
 
-      const commandData = [
-        ...client.commands.values()
-      ].map(command =>
-        command.data.toJSON()
-      );
+      const commands =
+        [
+          ...client.commands.values()
+        ].map(
+          command =>
+            command.data.toJSON()
+        );
 
       await rest.put(
         Routes.applicationCommands(
           process.env.CLIENT_ID
         ),
         {
-          body: commandData
+          body: commands
         }
       );
 
       console.log(
-        `✅ Registered ${commandData.length} GLOBAL commands.`
+        `✅ Registered ${commands.length} GLOBAL commands.`
       );
 
       console.log(
@@ -171,16 +250,16 @@ client.once(
 
     } catch (error) {
       console.error(
-        "❌ Registration failed:",
+        "❌ Command registration failed:",
         error
       );
     }
   }
 );
 
-// ===============================
+// =====================================
 // INTERACTIONS
-// ===============================
+// =====================================
 
 client.on(
   "interactionCreate",
@@ -188,18 +267,21 @@ client.on(
 
     try {
 
-      // =============================
+      // =================================
       // SLASH COMMANDS
-      // =============================
+      // =================================
 
-      if (interaction.isChatInputCommand()) {
-
+      if (
+        interaction.isChatInputCommand()
+      ) {
         const command =
           client.commands.get(
             interaction.commandName
           );
 
-        if (!command) return;
+        if (!command) {
+          return;
+        }
 
         await command.execute(
           interaction
@@ -208,13 +290,157 @@ client.on(
         return;
       }
 
-      // =============================
-      // MUSIC PANEL BUTTONS
-      // =============================
+      // =================================
+      // AUTOMOD INTERACTIONS
+      // =================================
 
-      if (interaction.isButton()) {
+      if (
+        interaction.isButton() ||
+        interaction.isStringSelectMenu() ||
+        interaction.isModalSubmit()
+      ) {
 
-        const musicButtons = [
+        const customId =
+          interaction.customId || "";
+
+        if (
+          customId.startsWith(
+            "automod_"
+          )
+        ) {
+
+          // -----------------------------
+          // BAD WORD MODAL
+          // -----------------------------
+
+          if (
+            interaction.isModalSubmit() &&
+            customId ===
+              "automod_words_modal"
+          ) {
+
+            if (
+              !interaction.memberPermissions.has(
+                "ManageGuild"
+              )
+            ) {
+              return interaction.reply({
+                content:
+                  "❌ Manage Server required.",
+                flags: 64
+              });
+            }
+
+            const configModule =
+              require(
+                "./automod/config"
+              );
+
+            const config =
+              configModule.getConfig(
+                interaction.guild.id
+              );
+
+            const input =
+              interaction.fields
+                .getTextInputValue(
+                  "words"
+                );
+
+            const newWords =
+              input
+                .split(",")
+                .map(
+                  word =>
+                    word.trim()
+                )
+                .filter(Boolean);
+
+            if (
+              !newWords.length
+            ) {
+              return interaction.reply({
+                content:
+                  "❌ No valid words provided.",
+                flags: 64
+              });
+            }
+
+            config.wordFilter.words ??=
+              [];
+
+            const existing =
+              new Set(
+                config.wordFilter.words.map(
+                  word =>
+                    String(word)
+                      .toLowerCase()
+                )
+              );
+
+            let added = 0;
+
+            for (
+              const word of newWords
+            ) {
+
+              const normalized =
+                word.toLowerCase();
+
+              if (
+                !existing.has(
+                  normalized
+                )
+              ) {
+                config.wordFilter.words.push(
+                  word
+                );
+
+                existing.add(
+                  normalized
+                );
+
+                added++;
+              }
+            }
+
+            configModule.updateConfig(
+              interaction.guild.id,
+              config
+            );
+
+            return interaction.reply({
+              content:
+                `✅ Added **${added}** new word(s).\n\n` +
+                `🤬 Total blocked words: **${config.wordFilter.words.length}**`,
+              flags: 64
+            });
+          }
+
+          // -----------------------------
+          // AUTOMOD PANEL
+          // -----------------------------
+
+          const handled =
+            await autoModCommand.handle(
+              interaction
+            );
+
+          if (handled) {
+            return;
+          }
+        }
+      }
+
+      // =================================
+      // MUSIC BUTTONS
+      // =================================
+
+      if (
+        interaction.isButton()
+      ) {
+
+        const musicIds = [
           "music_pause",
           "music_skip",
           "music_stop",
@@ -224,103 +450,101 @@ client.on(
         ];
 
         if (
-          musicButtons.includes(
+          musicIds.includes(
             interaction.customId
           )
         ) {
 
-          const player =
-            interaction.client.musicPlayer;
-
-          if (!player) {
-            return interaction.reply({
-              content:
-                "❌ Music player initialize nahi hua.",
-              ephemeral: true
-            });
-          }
-
           const queue =
-            player.nodes.get(
-              interaction.guildId
+            client.musicPlayer.nodes.get(
+              interaction.guild.id
             );
 
           if (!queue) {
             return interaction.reply({
               content:
-                "❌ Abhi koi music queue nahi chal rahi.",
-              ephemeral: true
+                "❌ Abhi music session active nahi hai.",
+              flags: 64
             });
           }
 
-          // =========================
-          // PAUSE / RESUME
-          // =========================
+          // -----------------------------
+          // PAUSE
+          // -----------------------------
 
           if (
             interaction.customId ===
             "music_pause"
           ) {
 
-            if (queue.node.isPaused()) {
+            const paused =
+              queue.node.isPaused();
 
-              queue.node.resume();
-
-              return interaction.reply({
-                content:
-                  "▶️ Music resumed.",
-                ephemeral: true
-              });
-            }
-
-            queue.node.pause();
+            queue.node.setPaused(
+              !paused
+            );
 
             return interaction.reply({
               content:
-                "⏸️ Music paused.",
-              ephemeral: true
+                paused
+                  ? "▶️ Music resumed."
+                  : "⏸️ Music paused.",
+              flags: 64
             });
           }
 
-          // =========================
+          // -----------------------------
           // SKIP
-          // =========================
+          // -----------------------------
 
           if (
             interaction.customId ===
             "music_skip"
           ) {
 
-            await queue.node.skip();
+            try {
+              await queue.node.skip();
 
-            return interaction.reply({
-              content:
-                "⏭️ Song skipped.",
-              ephemeral: true
-            });
+              return interaction.reply({
+                content:
+                  "⏭️ Skipped.",
+                flags: 64
+              });
+
+            } catch (error) {
+              return interaction.reply({
+                content:
+                  `❌ Skip failed: ${error.message}`,
+                flags: 64
+              });
+            }
           }
 
-          // =========================
+          // -----------------------------
           // STOP
-          // =========================
+          // -----------------------------
 
           if (
             interaction.customId ===
             "music_stop"
           ) {
 
+            clearTimers(
+              interaction.guild.id
+            );
+
             queue.delete();
 
             return interaction.reply({
               content:
                 "⏹️ Music stopped.",
-              ephemeral: true
+              flags: 64
             });
           }
 
-          // =========================
+          // -----------------------------
           // LOOP
-          // =========================
+          // -----------------------------
 
           if (
             interaction.customId ===
@@ -328,130 +552,234 @@ client.on(
           ) {
 
             const mode =
-              queue.repeatMode;
+              Number(
+                queue.repeatMode
+              );
 
-            if (mode === 0) {
+            let nextMode;
+            let label;
+            let emoji;
 
-              queue.setRepeatMode(1);
+            if (
+              mode === 0
+            ) {
+              nextMode = 1;
+              label = "Loop: Track";
+              emoji = "🔂";
 
-              return interaction.reply({
-                content:
-                  "🔂 Loop: **Current Song**",
-                ephemeral: true
-              });
+            } else if (
+              mode === 1
+            ) {
+              nextMode = 2;
+              label = "Loop: Queue";
+              emoji = "🔁";
+
+            } else {
+              nextMode = 0;
+              label = "Loop: Off";
+              emoji = "⛔";
             }
 
-            if (mode === 1) {
+            queue.setRepeatMode(
+              nextMode
+            );
 
-              queue.setRepeatMode(2);
+            const rows =
+              interaction.message.components.map(
+                row =>
+                  new ActionRowBuilder()
+                    .addComponents(
+                      row.components.map(
+                        component => {
 
-              return interaction.reply({
-                content:
-                  "🔁 Loop: **Queue**",
-                ephemeral: true
-              });
-            }
+                          const button =
+                            ButtonBuilder.from(
+                              component
+                            );
 
-            queue.setRepeatMode(0);
+                          if (
+                            component.customId ===
+                            "music_loop"
+                          ) {
+                            button
+                              .setLabel(
+                                label
+                              )
+                              .setEmoji(
+                                emoji
+                              );
+                          }
 
-            return interaction.reply({
-              content:
-                "➡️ Loop disabled.",
-              ephemeral: true
+                          return button;
+                        }
+                      )
+                    )
+              );
+
+            return interaction.update({
+              components: rows
             });
           }
 
-          // =========================
+          // -----------------------------
           // QUEUE
-          // =========================
+          // -----------------------------
 
           if (
             interaction.customId ===
             "music_queue"
           ) {
 
-            const tracks =
-              queue.tracks.toArray();
+            const current =
+              queue.currentTrack;
 
-            if (!tracks.length) {
+            if (!current) {
               return interaction.reply({
                 content:
                   "📭 Queue empty hai.",
-                ephemeral: true
+                flags: 64
               });
             }
 
-            const list =
-              tracks
-                .slice(0, 10)
-                .map(
-                  (track, index) =>
-                    `**${index + 1}.** ${track.title}`
-                )
-                .join("\n");
+            const tracks =
+              queue.tracks.toArray();
+
+            let text =
+              `🎵 **Now Playing:** ${current.title}\n\n`;
+
+            if (
+              !tracks.length
+            ) {
+              text +=
+                "📭 No more songs in queue.";
+            } else {
+              text +=
+                tracks
+                  .slice(0, 10)
+                  .map(
+                    (
+                      track,
+                      index
+                    ) =>
+                      `**${index + 1}.** ${track.title}`
+                  )
+                  .join("\n");
+            }
 
             return interaction.reply({
-              content:
-                `📜 **Music Queue**\n\n${list}`,
-              ephemeral: true
+              content: text,
+              flags: 64
             });
           }
 
-          // =========================
+          // -----------------------------
           // SHUFFLE
-          // =========================
+          // -----------------------------
 
           if (
             interaction.customId ===
             "music_shuffle"
           ) {
 
-            if (queue.tracks.size < 2) {
-              return interaction.reply({
-                content:
-                  "❌ Shuffle ke liye queue mein 2+ songs chahiye.",
-                ephemeral: true
-              });
-            }
-
             queue.tracks.shuffle();
 
             return interaction.reply({
               content:
                 "🔀 Queue shuffled.",
-              ephemeral: true
+              flags: 64
             });
           }
-
-          return;
         }
       }
 
-      // =============================
-      // TICKET BUTTONS / MENUS
-      // =============================
+      // =================================
+      // TICKET SYSTEM
+      // =================================
 
       if (
         interaction.isButton() ||
+        interaction.isModalSubmit() ||
+        interaction.isChannelSelectMenu() ||
+        interaction.isRoleSelectMenu() ||
         interaction.isStringSelectMenu()
       ) {
 
-        const tickets =
-          require(
-            "./events/tickets"
+        let handled = false;
+
+        // -----------------------------
+        // TICKET COMMAND
+        // -----------------------------
+
+        try {
+
+          const ticketCommand =
+            client.commands.get(
+              "ticket"
+            );
+
+          if (
+            ticketCommand &&
+            typeof ticketCommand.handle ===
+              "function"
+          ) {
+
+            handled =
+              await ticketCommand.handle(
+                interaction
+              );
+          }
+
+        } catch (error) {
+
+          console.error(
+            "❌ Ticket Setup Error:",
+            error
           );
+        }
 
-        await tickets.handle(
-          interaction
-        );
+        if (handled) {
+          return;
+        }
 
-        return;
+        // -----------------------------
+        // TICKET EVENTS
+        // -----------------------------
+
+        try {
+
+          const tickets =
+            require(
+              "./events/tickets"
+            );
+
+          if (
+            typeof tickets.handle ===
+              "function"
+          ) {
+
+            handled =
+              await tickets.handle(
+                interaction
+              );
+          }
+
+        } catch (error) {
+
+          console.error(
+            "❌ Ticket System Error:",
+            error
+          );
+        }
+
+        if (handled) {
+          return;
+        }
       }
 
     } catch (error) {
 
       console.error(
-        "❌ Interaction error:",
+        "❌ Interaction Error:",
         error
       );
 
@@ -463,7 +791,7 @@ client.on(
               error.message ||
               "Something went wrong."
             }`,
-          ephemeral: true
+          flags: 64
         };
 
         if (
@@ -487,19 +815,25 @@ client.on(
   }
 );
 
-// ===============================
+// =====================================
 // LOGIN
-// ===============================
+// =====================================
 
-client
-  .login(
-    process.env.DISCORD_TOKEN
-  )
-  .catch(error => {
+client.login(
+  process.env.DISCORD_TOKEN
+)
+.then(() => {
 
-    console.error(
-      "❌ Login failed:",
-      error.message
-    );
+  console.log(
+    "🔐 Discord login successful."
+  );
 
-  });
+})
+.catch(error => {
+
+  console.error(
+    "❌ Login failed:",
+    error.message
+  );
+
+});

@@ -19,6 +19,8 @@ const {
 const autoMod = require("./automod/autoMod");
 const antiNuke = require("./antinuke/antiNuke");
 
+const autoResponder = require("./events/autoresponder");
+
 const ticketSetup = require("./events/ticketSetup");
 const ticketSetupSelectors = require("./events/ticketSetupSelectors");
 const ticketSetupFinish = require("./events/ticketSetupFinish");
@@ -137,6 +139,73 @@ client.on("messageCreate", async message => {
   } catch (error) {
     console.error(
       "❌ AutoMod Error:",
+      error
+    );
+  }
+});
+
+// =====================================
+// AFK + AUTORESPONDER
+// =====================================
+
+client.on("messageCreate", async message => {
+  try {
+    if (!message.guild || message.author.bot) return;
+
+    // ================================
+    // AFK
+    // ================================
+    const afkPath = path.join(
+      __dirname,
+      "utils/afk.json"
+    );
+
+    let afkData = {};
+    try {
+      afkData = JSON.parse(
+        fs.readFileSync(afkPath, "utf8")
+      );
+    } catch {}
+
+    // Remove YOUR AFK when you send any message
+    if (afkData[message.author.id]) {
+      delete afkData[message.author.id];
+
+      fs.writeFileSync(
+        afkPath,
+        JSON.stringify(afkData, null, 2)
+      );
+
+      await message.reply(
+        "👋 Welcome back! Your AFK status has been removed."
+      );
+    }
+
+    // Tell users when they mention someone who is AFK
+    for (const user of message.mentions.users.values()) {
+      const afk = afkData[user.id];
+
+      if (!afk) continue;
+
+      const since = afk.since
+        ? `<t:${Math.floor(afk.since / 1000)}:R>`
+        : "a while ago";
+
+      await message.reply(
+        `💤 **${user.tag}** is currently AFK.\n` +
+        `📝 Reason: **${afk.reason || "No reason provided"}**\n` +
+        `⏰ Since: ${since}`
+      );
+    }
+
+    // ================================
+    // AUTORESPONDER
+    // ================================
+    await autoResponder.handle(message);
+
+  } catch (error) {
+    console.error(
+      "❌ AFK/Autoresponder Error:",
       error
     );
   }

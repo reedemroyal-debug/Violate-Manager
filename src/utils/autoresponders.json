@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "responders": [
+    {
+      "id": "ar_1787929654522",
+      "trigger": "ip",
+      "message": "coming soon",
+      "image": "",
+      "embedTitle": "",
+      "embedDescription": "",
+      "color": "#5865F2",
+      "footer": "",
+      "channelId": null,
+      "caseSensitive": false,
+      "enabled": true,
+      "createdBy": "1350726344648036402",
+      "createdAt": 1787929654522
+    }
+  ]
+}

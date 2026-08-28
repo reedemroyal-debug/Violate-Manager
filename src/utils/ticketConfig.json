@@ -1,30 +1,13 @@
 {
   "panels": {
     "1350726344648036402": {
-      "title": "Waah",
-      "description": "Test",
-      "color": 48340,
+      "title": null,
+      "description": null,
+      "color": null,
       "image": null,
       "thumbnail": null,
       "json": null,
-      "categories": [
-        {
-          "id": "category_1787924163175",
-          "name": "Test",
-          "description": "Waah",
-          "emoji": "🌹@TICKET HOLDER",
-          "discordCategoryId": null,
-          "staffRoleId": null
-        },
-        {
-          "id": "category_1787924163177",
-          "name": "Test",
-          "description": "Waah",
-          "emoji": "🌹@TICKET HOLDER",
-          "discordCategoryId": null,
-          "staffRoleId": null
-        }
-      ]
+      "categories": []
     }
   },
   "categories": {}

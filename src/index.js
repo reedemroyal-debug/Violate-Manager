@@ -18,6 +18,7 @@ const {
 
 const autoMod = require("./automod/autoMod");
 const antiNuke = require("./antinuke/antiNuke");
+const welcome = require("./events/welcome");
 const autoRole = require("./events/autorole");
 
 const autoResponder = require("./events/autoresponder");
@@ -105,6 +106,21 @@ for (const file of commandFiles) {
     );
   }
 }
+
+// =====================================
+// WELCOME
+// =====================================
+
+client.on("guildMemberAdd", async member => {
+  try {
+    await welcome.handle(member);
+  } catch (error) {
+    console.error(
+      "❌ Welcome Error:",
+      error
+    );
+  }
+});
 
 // =====================================
 // AUTOROLE

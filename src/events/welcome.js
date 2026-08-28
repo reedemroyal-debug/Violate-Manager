@@ -20,8 +20,21 @@ function load() {
   }
 }
 
+function replaceCustomEmojis(text, member) {
+  return String(text || "").replace(
+    /:([a-zA-Z0-9_]+):/g,
+    (match, name) => {
+      const emoji = member.guild.emojis.cache.find(
+        e => e.name === name
+      );
+
+      return emoji ? emoji.toString() : match;
+    }
+  );
+}
+
 function replaceVariables(text, member) {
-  return String(text || "")
+  const result = String(text || "")
     .replaceAll("{user}", `<@${member.id}>`)
     .replaceAll("{username}", member.user.username)
     .replaceAll("{server}", member.guild.name)
@@ -29,6 +42,8 @@ function replaceVariables(text, member) {
       "{membercount}",
       String(member.guild.memberCount)
     );
+
+  return replaceCustomEmojis(result, member);
 }
 
 async function sendWelcome(member) {

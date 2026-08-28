@@ -1,598 +1,375 @@
 const {
   SlashCommandBuilder,
-  PermissionFlagsBits,
+  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  EmbedBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  ChannelSelectMenuBuilder,
-  RoleSelectMenuBuilder,
-  ChannelType,
-  PermissionsBitField
+  PermissionFlagsBits
 } = require("discord.js");
 
-const { getGuild, updateGuild } =
-  require("../utils/ticketStore");
+const fs = require("fs");
+const path = require("path");
 
-const DEF = {
-  title: "🎫 Support",
-  description: "Click the button below to create a ticket.",
-  color: "#5865F2",
-  image: "",
-  thumbnail: "",
-  buttonText: "Create Ticket",
-  buttonEmoji: "🎫",
-  categoryId: "",
-  staffRoleId: "",
-  logChannelId: ""
-};
+const CONFIG = path.join(__dirname, "../utils/ticketConfig.json");
 
-function cfg(id) {
-  const c = getGuild(id);
-  c.setup = { ...DEF, ...(c.setup || {}) };
-  c.tickets ??= {};
-  updateGuild(id, c);
-  return c;
-}
-
-function validURL(x) {
-  if (!x) return true;
+function loadConfig() {
   try {
-    return ["http:", "https:"].includes(new URL(x).protocol);
+    return JSON.parse(fs.readFileSync(CONFIG, "utf8"));
   } catch {
-    return false;
+    return { panels: {}, categories: {} };
   }
 }
 
-function validColor(x) {
-  return /^#[0-9A-Fa-f]{6}$/.test(x);
-}
-
-function emoji(x) {
-  if (!x) return null;
-  const m = x.match(/^<(a?):(\w+):(\d+)>$/);
-
-  if (m)
-    return {
-      id: m[3],
-      name: m[2],
-      animated: m[1] === "a"
-    };
-
-  return { name: x };
-}
-
-function setupEmbed(s) {
-  const e = new EmbedBuilder()
-    .setTitle(s.title)
-    .setDescription(s.description)
-    .setColor(s.color);
-
-  if (s.image) e.setImage(s.image);
-  if (s.thumbnail) e.setThumbnail(s.thumbnail);
-
-  return e;
-}
-
-function ticketButton(s) {
-  const b = new ButtonBuilder()
-    .setCustomId("ticket_create")
-    .setLabel(s.buttonText || "Create Ticket")
-    .setStyle(ButtonStyle.Primary);
-
-  try {
-    if (s.buttonEmoji)
-      b.setEmoji(emoji(s.buttonEmoji));
-  } catch {
-    b.setEmoji("🎫");
-  }
-
-  return b;
-}
-
-function setupPanel() {
-  const b = (id, label, em, style = ButtonStyle.Secondary) =>
-    new ButtonBuilder()
-      .setCustomId(id)
-      .setLabel(label)
-      .setEmoji(em)
-      .setStyle(style);
-
-  return [
-    new ActionRowBuilder().addComponents(
-      b("ticket_title", "Title", "📝", ButtonStyle.Primary),
-      b("ticket_desc", "Description", "📄", ButtonStyle.Primary),
-      b("ticket_color", "Color", "🎨")
-    ),
-    new ActionRowBuilder().addComponents(
-      b("ticket_image", "Image URL", "🖼️"),
-      b("ticket_thumb", "Thumbnail", "🔍"),
-      b("ticket_button", "Button", "🔘")
-    ),
-    new ActionRowBuilder().addComponents(
-      b("ticket_category", "Category", "📂"),
-      b("ticket_staff", "Staff Role", "👮"),
-      b("ticket_logs", "Logs", "📋")
-    ),
-    new ActionRowBuilder().addComponents(
-      b("ticket_preview", "Preview", "👀", ButtonStyle.Primary),
-      b("ticket_save", "Save", "💾", ButtonStyle.Success)
-    )
-  ];
-}
-
-function modal(id, title, fields) {
-  return new ModalBuilder()
-    .setCustomId(id)
-    .setTitle(title)
-    .addComponents(
-      ...fields.map(f =>
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId(f.id)
-            .setLabel(f.label)
-            .setStyle(f.style || TextInputStyle.Short)
-            .setRequired(f.required ?? true)
-            .setValue(f.value || "")
-            .setPlaceholder(f.placeholder || "")
-        )
-      )
-    );
+function saveConfig(data) {
+  fs.writeFileSync(CONFIG, JSON.stringify(data, null, 2));
 }
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ticket")
     .setDescription("Ticket system")
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageGuild
-    )
-    .addSubcommand(s =>
-      s.setName("setup")
-        .setDescription("Configure ticket system")
-    )
-    .addSubcommand(s =>
-      s.setName("panel")
-        .setDescription("Send the ticket panel")
-        .addChannelOption(o =>
-          o.setName("channel")
-            .setDescription("Channel for ticket panel")
-            .addChannelTypes(ChannelType.GuildText)
-            .setRequired(true)
-        )
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+
+    .addSubcommand(sub =>
+      sub
+        .setName("setup")
+        .setDescription("Create a ticket panel")
     ),
 
-  async execute(i) {
-    const c = cfg(i.guild.id);
-    const s = c.setup;
+  async execute(interaction) {
+    if (interaction.options.getSubcommand() !== "setup") return;
 
-    if (i.options.getSubcommand() === "panel") {
-      if (!s.categoryId || !s.staffRoleId)
-        return i.reply({
-          content:
-            "❌ Pehle `/ticket setup` mein Category aur Staff Role set karo.",
-          ephemeral: true
-        });
+    const embed = new EmbedBuilder()
+      .setTitle("🎫 Ticket Setup")
+      .setDescription(
+        "Please enter the requested information as prompted.\n\n" +
+        "This embed will automatically populate with the information you provide.\n\n" +
+        "**Required:**\n" +
+        "📝 Title\n" +
+        "📄 Description\n" +
+        "🎨 Color\n\n" +
+        "**Optional:**\n" +
+        "🖼️ Image\n" +
+        "🖼️ Thumbnail\n" +
+        "📋 JSON"
+      )
+      .setColor(0x5865f2);
 
-      const ch = i.options.getChannel("channel");
+    const row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("ticket_title")
+        .setLabel("Title")
+        .setStyle(ButtonStyle.Primary),
 
-      await ch.send({
-        embeds: [setupEmbed(s)],
-        components: [
-          new ActionRowBuilder().addComponents(
-            ticketButton(s)
-          )
-        ]
-      });
+      new ButtonBuilder()
+        .setCustomId("ticket_description")
+        .setLabel("Description")
+        .setStyle(ButtonStyle.Primary),
 
-      return i.reply({
-        content: `✅ Ticket panel sent in ${ch}.`,
-        ephemeral: true
-      });
-    }
+      new ButtonBuilder()
+        .setCustomId("ticket_color")
+        .setLabel("Color")
+        .setStyle(ButtonStyle.Primary)
+    );
 
-    return i.reply({
-      embeds: [setupEmbed(s)],
-      components: setupPanel(),
-      ephemeral: true
-    });
-  },
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("ticket_image")
+        .setLabel("Image")
+        .setStyle(ButtonStyle.Secondary),
 
-  async handle(i) {
-    if (!i.customId?.startsWith("ticket_"))
-      return false;
+      new ButtonBuilder()
+        .setCustomId("ticket_thumbnail")
+        .setLabel("Thumbnail")
+        .setStyle(ButtonStyle.Secondary),
 
-    const c = cfg(i.guild.id);
-    const s = c.setup;
+      new ButtonBuilder()
+        .setCustomId("ticket_json")
+        .setLabel("JSON")
+        .setStyle(ButtonStyle.Success)
+    );
 
-    /* CREATE TICKET */
+    const row3 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("ticket_save_category")
+        .setLabel("Save & Set Category")
+        .setStyle(ButtonStyle.Success),
 
-    if (i.customId === "ticket_create") {
-      const old = Object.values(c.tickets)
-        .find(t => t.userId === i.user.id && t.open);
+      new ButtonBuilder()
+        .setCustomId("ticket_exit")
+        .setLabel("Exit")
+        .setStyle(ButtonStyle.Danger)
+    );
 
-      if (old) {
-        const ch = i.guild.channels.cache.get(old.channelId);
+    const config = loadConfig();
 
-        return i.reply({
-          content: ch
-            ? `❌ You already have a ticket: ${ch}`
-            : "❌ You already have an open ticket.",
-          ephemeral: true
-        });
-      }
-
-      const channel = await i.guild.channels.create({
-        name: `ticket-${i.user.username}`.toLowerCase().slice(0, 90),
-        type: ChannelType.GuildText,
-        parent: s.categoryId,
-        permissionOverwrites: [
-          {
-            id: i.guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel]
-          },
-          {
-            id: i.user.id,
-            allow: [
-              PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages,
-              PermissionsBitField.Flags.ReadMessageHistory
-            ]
-          },
-          {
-            id: s.staffRoleId,
-            allow: [
-              PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages,
-              PermissionsBitField.Flags.ReadMessageHistory
-            ]
-          },
-          {
-            id: i.client.user.id,
-            allow: [
-              PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages,
-              PermissionsBitField.Flags.ManageChannels
-            ]
-          }
-        ]
-      });
-
-      c.tickets[channel.id] = {
-        channelId: channel.id,
-        userId: i.user.id,
-        open: true,
-        createdAt: Date.now()
-      };
-
-      updateGuild(i.guild.id, c);
-
-      const close = new ButtonBuilder()
-        .setCustomId("ticket_close")
-        .setLabel("Close Ticket")
-        .setEmoji("🔒")
-        .setStyle(ButtonStyle.Danger);
-
-      await channel.send({
-        content: `${i.user} <@&${s.staffRoleId}>`,
-        embeds: [
-          new EmbedBuilder()
-            .setTitle("🎫 Ticket Created")
-            .setDescription(
-              "Support team will assist you here.\n\n" +
-              "Click **Close Ticket** when your issue is resolved."
-            )
-            .setColor(s.color)
-        ],
-        components: [
-          new ActionRowBuilder().addComponents(close)
-        ]
-      });
-
-      if (s.logChannelId) {
-        const log = i.guild.channels.cache.get(s.logChannelId);
-
-        if (log)
-          await log.send(
-            `🎫 Ticket created: ${channel} by ${i.user.tag}`
-          ).catch(() => {});
-      }
-
-      return i.reply({
-        content: `✅ Your ticket has been created: ${channel}`,
-        ephemeral: true
-      });
-    }
-
-    /* CLOSE TICKET */
-
-    if (i.customId === "ticket_close") {
-      const t = c.tickets[i.channel.id];
-
-      if (!t)
-        return i.reply({
-          content: "❌ This is not a ticket.",
-          ephemeral: true
-        });
-
-      t.open = false;
-      t.closedAt = Date.now();
-      t.closedBy = i.user.id;
-
-      updateGuild(i.guild.id, c);
-
-      await i.reply("🔒 Ticket closing...");
-
-      setTimeout(() => {
-        i.channel.delete().catch(() => {});
-      }, 3000);
-
-      return true;
-    }
-
-    /* SETUP MODALS */
-
-    const M = {
-      ticket_title: [
-        "ticket_m_title",
-        "Ticket Title",
-        [{ id: "v", label: "Title", value: s.title }]
-      ],
-
-      ticket_desc: [
-        "ticket_m_desc",
-        "Ticket Description",
-        [{
-          id: "v",
-          label: "Description",
-          style: TextInputStyle.Paragraph,
-          value: s.description
-        }]
-      ],
-
-      ticket_color: [
-        "ticket_m_color",
-        "Embed Color",
-        [{
-          id: "v",
-          label: "HEX Color",
-          value: s.color,
-          placeholder: "#5865F2"
-        }]
-      ],
-
-      ticket_image: [
-        "ticket_m_image",
-        "Image URL",
-        [{
-          id: "v",
-          label: "Image URL",
-          value: s.image,
-          required: false,
-          placeholder: "https://..."
-        }]
-      ],
-
-      ticket_thumb: [
-        "ticket_m_thumb",
-        "Thumbnail URL",
-        [{
-          id: "v",
-          label: "Thumbnail URL",
-          value: s.thumbnail,
-          required: false,
-          placeholder: "https://..."
-        }]
-      ],
-
-      ticket_button: [
-        "ticket_m_button",
-        "Ticket Button",
-        [
-          {
-            id: "text",
-            label: "Button Text",
-            value: s.buttonText
-          },
-          {
-            id: "emoji",
-            label: "Emoji / Custom Emoji",
-            value: s.buttonEmoji,
-            required: false,
-            placeholder: "🎫 or <:name:id>"
-          }
-        ]
-      ]
+    config.panels[interaction.user.id] = {
+      title: null,
+      description: null,
+      color: null,
+      image: null,
+      thumbnail: null,
+      json: null,
+      categories: []
     };
 
-    if (M[i.customId]) {
-      const [id, title, fields] = M[i.customId];
-      await i.showModal(modal(id, title, fields));
-      return true;
-    }
+    saveConfig(config);
 
-    /* MODAL SUBMIT */
+    await interaction.reply({
+      embeds: [embed],
+      components: [row1, row2, row3],
+      ephemeral: true
+    });
 
-    if (i.isModalSubmit()) {
-      const v = id =>
-        i.fields.getTextInputValue(id).trim();
+    const message = await interaction.fetchReply();
 
-      if (i.customId === "ticket_m_title")
-        s.title = v("v");
+    const collector = message.createMessageComponentCollector({
+      time: 15 * 60 * 1000
+    });
 
-      if (i.customId === "ticket_m_desc")
-        s.description = v("v");
-
-      if (i.customId === "ticket_m_color") {
-        if (!validColor(v("v")))
-          return i.reply({
-            content: "❌ Invalid HEX color.",
-            ephemeral: true
-          });
-
-        s.color = v("v").toUpperCase();
+    collector.on("collect", async button => {
+      if (button.user.id !== interaction.user.id) {
+        return button.reply({
+          content: "❌ This setup belongs to someone else.",
+          ephemeral: true
+        });
       }
 
-      if (i.customId === "ticket_m_image") {
-        if (!validURL(v("v")))
-          return i.reply({
-            content: "❌ Invalid image URL.",
-            ephemeral: true
-          });
+      const cfg = loadConfig();
+      const panel = cfg.panels[interaction.user.id];
 
-        s.image = v("v");
+      if (!panel) {
+        return button.reply({
+          content: "❌ Setup expired. Run `/ticket setup` again.",
+          ephemeral: true
+        });
       }
 
-      if (i.customId === "ticket_m_thumb") {
-        if (!validURL(v("v")))
-          return i.reply({
-            content: "❌ Invalid thumbnail URL.",
-            ephemeral: true
-          });
+      if (button.customId === "ticket_exit") {
+        delete cfg.panels[interaction.user.id];
+        saveConfig(cfg);
+        collector.stop();
 
-        s.thumbnail = v("v");
+        return button.update({
+          content: "❌ Ticket setup cancelled.",
+          embeds: [],
+          components: []
+        });
       }
 
-      if (i.customId === "ticket_m_button") {
-        s.buttonText =
-          v("text") || "Create Ticket";
+      const modalMap = {
+        ticket_title: {
+          title: "Ticket Title",
+          customId: "ticket_modal_title",
+          label: "Title",
+          placeholder: "Example: Welcome to Support",
+          key: "title"
+        },
+        ticket_description: {
+          title: "Ticket Description",
+          customId: "ticket_modal_description",
+          label: "Description",
+          placeholder: "Enter your ticket panel description...",
+          key: "description"
+        },
+        ticket_image: {
+          title: "Ticket Image",
+          customId: "ticket_modal_image",
+          label: "Image URL",
+          placeholder: "https://example.com/image.png",
+          key: "image"
+        },
+        ticket_thumbnail: {
+          title: "Ticket Thumbnail",
+          customId: "ticket_modal_thumbnail",
+          label: "Thumbnail URL",
+          placeholder: "https://example.com/thumbnail.png",
+          key: "thumbnail"
+        },
+        ticket_json: {
+          title: "Ticket JSON",
+          customId: "ticket_modal_json",
+          label: "JSON",
+          placeholder: '{"title":"Support","color":"#5865F2"}',
+          key: "json"
+        }
+      };
 
-        s.buttonEmoji =
-          v("emoji") || "🎫";
-      }
+      const modalData = modalMap[button.customId];
 
-      updateGuild(i.guild.id, c);
+      if (modalData) {
+        const modal = new ModalBuilder()
+          .setCustomId(modalData.customId)
+          .setTitle(modalData.title);
 
-      return i.reply({
-        embeds: [setupEmbed(s)],
-        components: setupPanel(),
-        ephemeral: true
-      });
-    }
-
-    /* CATEGORY */
-
-    if (i.customId === "ticket_category") {
-      const m = new ChannelSelectMenuBuilder()
-        .setCustomId("ticket_cat")
-        .setPlaceholder("Select ticket category")
-        .setChannelTypes(ChannelType.GuildCategory);
-
-      return i.update({
-        content: "📂 Select ticket category:",
-        embeds: [],
-        components: [
-          new ActionRowBuilder().addComponents(m)
-        ]
-      });
-    }
-
-    /* STAFF */
-
-    if (i.customId === "ticket_staff") {
-      const m = new RoleSelectMenuBuilder()
-        .setCustomId("ticket_role")
-        .setPlaceholder("Select staff role");
-
-      return i.update({
-        content: "👮 Select staff role:",
-        embeds: [],
-        components: [
-          new ActionRowBuilder().addComponents(m)
-        ]
-      });
-    }
-
-    /* LOGS */
-
-    if (i.customId === "ticket_logs") {
-      const m = new ChannelSelectMenuBuilder()
-        .setCustomId("ticket_log")
-        .setPlaceholder("Select log channel")
-        .setChannelTypes(ChannelType.GuildText);
-
-      return i.update({
-        content: "📋 Select log channel:",
-        embeds: [],
-        components: [
-          new ActionRowBuilder().addComponents(m)
-        ]
-      });
-    }
-
-    if (i.isChannelSelectMenu()) {
-      if (i.customId === "ticket_cat")
-        s.categoryId = i.values[0];
-
-      if (i.customId === "ticket_log")
-        s.logChannelId = i.values[0];
-
-      updateGuild(i.guild.id, c);
-
-      return i.update({
-        content: null,
-        embeds: [setupEmbed(s)],
-        components: setupPanel()
-      });
-    }
-
-    if (i.isRoleSelectMenu()) {
-      s.staffRoleId = i.values[0];
-
-      updateGuild(i.guild.id, c);
-
-      return i.update({
-        content: null,
-        embeds: [setupEmbed(s)],
-        components: setupPanel()
-      });
-    }
-
-    /* PREVIEW */
-
-    if (i.customId === "ticket_preview") {
-      return i.reply({
-        content: "👀 Ticket Preview",
-        embeds: [setupEmbed(s)],
-        components: [
-          new ActionRowBuilder().addComponents(
-            ticketButton(s)
+        const input = new TextInputBuilder()
+          .setCustomId("value")
+          .setLabel(modalData.label)
+          .setStyle(
+            modalData.key === "description" || modalData.key === "json"
+              ? TextInputStyle.Paragraph
+              : TextInputStyle.Short
           )
-        ],
-        ephemeral: true
-      });
-    }
+          .setRequired(true)
+          .setPlaceholder(modalData.placeholder);
 
-    /* SAVE */
+        if (panel[modalData.key]) {
+          input.setValue(String(panel[modalData.key]));
+        }
 
-    if (i.customId === "ticket_save") {
-      if (!s.title || !s.description)
-        return i.reply({
-          content:
-            "❌ Title and Description required.",
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(input)
+        );
+
+        await button.showModal(modal);
+
+        const submitted = await button
+          .awaitModalSubmit({
+            time: 120000,
+            filter: i =>
+              i.user.id === interaction.user.id &&
+              i.customId === modalData.customId
+          })
+          .catch(() => null);
+
+        if (!submitted) return;
+
+        panel[modalData.key] =
+          submitted.fields.getTextInputValue("value").trim();
+
+        saveConfig(cfg);
+
+        await submitted.reply({
+          content: `✅ ${modalData.label} saved.`,
           ephemeral: true
         });
 
-      if (!s.categoryId || !s.staffRoleId)
-        return i.reply({
-          content:
-            "❌ Select Category and Staff Role first.",
+        return;
+      }
+
+      if (button.customId === "ticket_color") {
+        const colorEmbed = new EmbedBuilder()
+          .setTitle("🎨 Select Ticket Color")
+          .setDescription("Choose the color for the embed side bar.")
+          .setColor(0x5865f2);
+
+        const colors = [
+          ["🔵 Blue", "ticket_color_BLUE", 0x3498db],
+          ["🔴 Red", "ticket_color_RED", 0xe74c3c],
+          ["🟢 Green", "ticket_color_GREEN", 0x2ecc71],
+          ["🟡 Yellow", "ticket_color_YELLOW", 0xf1c40f],
+          ["🟠 Orange", "ticket_color_ORANGE", 0xe67e22],
+          ["🟣 Purple", "ticket_color_PURPLE", 0x9b59b6],
+          ["🩷 Pink", "ticket_color_PINK", 0xe91e63],
+          ["🩵 Cyan", "ticket_color_CYAN", 0x00bcd4]
+        ];
+
+        const colorRows = [];
+
+        for (let i = 0; i < colors.length; i += 4) {
+          colorRows.push(
+            new ActionRowBuilder().addComponents(
+              ...colors.slice(i, i + 4).map(c =>
+                new ButtonBuilder()
+                  .setCustomId(c[1])
+                  .setLabel(c[0])
+                  .setStyle(ButtonStyle.Secondary)
+              )
+            )
+          );
+        }
+
+        await button.reply({
+          embeds: [colorEmbed],
+          components: colorRows,
           ephemeral: true
         });
 
-      updateGuild(i.guild.id, c);
+        const colorMessage = await button.fetchReply();
 
-      return i.update({
-        content:
-          "✅ Ticket configuration saved!\n\nUse `/ticket panel` to send the public ticket panel.",
-        embeds: [setupEmbed(s)],
-        components: []
-      });
-    }
+        const colorCollector =
+          colorMessage.createMessageComponentCollector({
+            time: 120000,
+            filter: b => b.user.id === interaction.user.id
+          });
 
-    return true;
+        colorCollector.on("collect", async colorButton => {
+          const selected = colors.find(
+            c => c[1] === colorButton.customId
+          );
+
+          if (!selected) return;
+
+          panel.color = selected[2];
+          saveConfig(cfg);
+
+          await colorButton.update({
+            content: `✅ Color set to **${selected[0]}**.`,
+            embeds: [],
+            components: []
+          });
+
+          colorCollector.stop();
+        });
+
+        return;
+      }
+
+      if (button.customId === "ticket_save_category") {
+        if (!panel.title || !panel.description || !panel.color) {
+          return button.reply({
+            content:
+              "❌ **Title, Description and Color are compulsory.**\n" +
+              "Please complete all three before continuing.",
+            ephemeral: true
+          });
+        }
+
+        const categoryEmbed = new EmbedBuilder()
+          .setTitle("🎫 Ticket Categories")
+          .setDescription(
+            "Use the buttons below to add categories.\n\n" +
+            "Each category can have:\n" +
+            "• Custom name\n" +
+            "• Description\n" +
+            "• Custom emoji\n" +
+            "• Discord channel category\n" +
+            "• Staff role"
+          )
+          .setColor(panel.color);
+
+        const categoryRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("ticket_add_category")
+            .setLabel("Add Select Menu Option")
+            .setStyle(ButtonStyle.Primary)
+        );
+
+        const finishRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("ticket_finish")
+            .setLabel("FINISH")
+            .setStyle(ButtonStyle.Success),
+
+          new ButtonBuilder()
+            .setCustomId("ticket_remove_category")
+            .setLabel("Remove Category")
+            .setStyle(ButtonStyle.Secondary)
+        );
+
+        await button.reply({
+          embeds: [categoryEmbed],
+          components: [categoryRow, finishRow],
+          ephemeral: true
+        });
+
+        return;
+      }
+
+      await button.deferUpdate();
+    });
   }
 };

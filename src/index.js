@@ -21,6 +21,7 @@ const antiNuke = require("./antinuke/antiNuke");
 
 const ticketSetup = require("./events/ticketSetup");
 const ticketSetupSelectors = require("./events/ticketSetupSelectors");
+const ticketSetupFinish = require("./events/ticketSetupFinish");
 
 // =====================================
 // ENV CHECK

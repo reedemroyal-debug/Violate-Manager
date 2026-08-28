@@ -1,7 +1,7 @@
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  EmbedBuilder
+  ChannelType
 } = require("discord.js");
 
 const fs = require("fs");
@@ -21,10 +21,7 @@ function load() {
 }
 
 function save(data) {
-  fs.writeFileSync(
-    DATA,
-    JSON.stringify(data, null, 2)
-  );
+  fs.writeFileSync(DATA, JSON.stringify(data, null, 2));
 }
 
 module.exports = {
@@ -38,54 +35,55 @@ module.exports = {
     .addSubcommand(sub =>
       sub
         .setName("setup")
-        .setDescription("Configure the welcome message")
-        .addChannelOption(option =>
-          option
+        .setDescription("Create or update the welcome system")
+        .addChannelOption(o =>
+          o
             .setName("channel")
             .setDescription("Welcome channel")
+            .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)
         )
-        .addStringOption(option =>
-          option
+        .addStringOption(o =>
+          o
+            .setName("title")
+            .setDescription("Welcome embed title")
+            .setRequired(true)
+            .setMaxLength(256)
+        )
+        .addStringOption(o =>
+          o
+            .setName("description")
+            .setDescription("Welcome embed description")
+            .setRequired(true)
+            .setMaxLength(4000)
+        )
+        .addStringOption(o =>
+          o
+            .setName("color")
+            .setDescription("Embed color, e.g. #5865F2")
+            .setRequired(true)
+        )
+        .addStringOption(o =>
+          o
             .setName("message")
-            .setDescription("Welcome message")
+            .setDescription("Message above the embed")
             .setRequired(false)
             .setMaxLength(2000)
         )
-        .addStringOption(option =>
-          option
-            .setName("title")
-            .setDescription("Embed title")
-            .setRequired(false)
-            .setMaxLength(256)
-        )
-        .addStringOption(option =>
-          option
-            .setName("description")
-            .setDescription("Embed description")
-            .setRequired(false)
-            .setMaxLength(4000)
-        )
-        .addStringOption(option =>
-          option
-            .setName("color")
-            .setDescription("HEX color, e.g. #5865F2")
-            .setRequired(false)
-        )
-        .addStringOption(option =>
-          option
+        .addStringOption(o =>
+          o
             .setName("image")
-            .setDescription("Welcome image/banner URL")
+            .setDescription("Large image URL")
             .setRequired(false)
         )
-        .addStringOption(option =>
-          option
+        .addStringOption(o =>
+          o
             .setName("thumbnail")
             .setDescription("Thumbnail URL")
             .setRequired(false)
         )
-        .addStringOption(option =>
-          option
+        .addStringOption(o =>
+          o
             .setName("footer")
             .setDescription("Embed footer")
             .setRequired(false)
@@ -96,11 +94,11 @@ module.exports = {
     .addSubcommand(sub =>
       sub
         .setName("toggle")
-        .setDescription("Enable or disable welcome messages")
-        .addBooleanOption(option =>
-          option
+        .setDescription("Enable or disable welcome")
+        .addBooleanOption(o =>
+          o
             .setName("enabled")
-            .setDescription("Enable welcome system?")
+            .setDescription("Enable welcome messages?")
             .setRequired(true)
         )
     )
@@ -108,13 +106,7 @@ module.exports = {
     .addSubcommand(sub =>
       sub
         .setName("test")
-        .setDescription("Test the welcome message")
-    )
-
-    .addSubcommand(sub =>
-      sub
-        .setName("view")
-        .setDescription("View current welcome configuration")
+        .setDescription("Send a test welcome message")
     ),
 
   async execute(interaction) {
@@ -127,149 +119,88 @@ module.exports = {
     data[guildId] ??= {
       enabled: false,
       channelId: null,
-      message: "",
-      title: "",
-      description: "",
+      title: null,
+      description: null,
       color: "#5865F2",
-      image: "",
-      thumbnail: "",
-      footer: ""
+      message: null,
+      image: null,
+      thumbnail: null,
+      footer: null
     };
 
     const config = data[guildId];
-
-    // ==========================
-    // SETUP
-    // ==========================
 
     if (sub === "setup") {
       const channel =
         interaction.options.getChannel("channel");
 
-      const message =
-        interaction.options.getString("message") || "";
-
       const title =
-        interaction.options.getString("title") || "";
+        interaction.options.getString("title");
 
       const description =
-        interaction.options.getString("description") || "";
+        interaction.options.getString("description");
 
       const color =
-        interaction.options.getString("color") || "#5865F2";
+        interaction.options.getString("color");
 
-      const image =
-        interaction.options.getString("image") || "";
-
-      const thumbnail =
-        interaction.options.getString("thumbnail") || "";
-
-      const footer =
-        interaction.options.getString("footer") || "";
-
-      if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-        return interaction.reply({
-          content: "❌ Invalid HEX color. Example: `#5865F2`",
-          ephemeral: true
-        });
-      }
-
-      if (
-        !message &&
-        !title &&
-        !description &&
-        !image
-      ) {
+      if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
         return interaction.reply({
           content:
-            "❌ Add at least a message, title, description, or image.",
+            "❌ Invalid color. Use format like `#5865F2`.",
           ephemeral: true
         });
       }
 
       config.channelId = channel.id;
-      config.message = message;
       config.title = title;
       config.description = description;
       config.color = color;
-      config.image = image;
-      config.thumbnail = thumbnail;
-      config.footer = footer;
+
+      config.message =
+        interaction.options.getString("message") || null;
+
+      config.image =
+        interaction.options.getString("image") || null;
+
+      config.thumbnail =
+        interaction.options.getString("thumbnail") || null;
+
+      config.footer =
+        interaction.options.getString("footer") || null;
+
       config.enabled = true;
 
       save(data);
 
-      return interaction.reply(
-        `✅ Welcome system configured!\n\n` +
-        `📢 Channel: ${channel}\n` +
-        `🟢 Status: **Enabled**`
-      );
-    }
-
-    // ==========================
-    // TOGGLE
-    // ==========================
-
-    if (sub === "toggle") {
-      config.enabled =
-        interaction.options.getBoolean("enabled");
-
-      save(data);
-
-      return interaction.reply(
-        `👋 Welcome system is now **${
-          config.enabled
-            ? "enabled 🟢"
-            : "disabled 🔴"
-        }**.`
-      );
-    }
-
-    // ==========================
-    // VIEW
-    // ==========================
-
-    if (sub === "view") {
-      const embed =
-        new EmbedBuilder()
-          .setTitle("👋 Welcome Configuration")
-          .setColor(config.color || "#5865F2")
-          .addFields(
-            {
-              name: "Status",
-              value: config.enabled
-                ? "🟢 Enabled"
-                : "🔴 Disabled",
-              inline: true
-            },
-            {
-              name: "Channel",
-              value: config.channelId
-                ? `<#${config.channelId}>`
-                : "Not configured",
-              inline: true
-            },
-            {
-              name: "Message",
-              value: config.message || "None"
-            }
-          );
-
       return interaction.reply({
-        embeds: [embed],
+        content:
+          `✅ **Welcome system configured!**\n\n` +
+          `📢 Channel: ${channel}\n` +
+          `🟢 Status: Enabled\n\n` +
+          `Use \`/welcome test\` to preview it.`,
         ephemeral: true
       });
     }
 
-    // ==========================
-    // TEST
-    // ==========================
+    if (sub === "toggle") {
+      const enabled =
+        interaction.options.getBoolean("enabled");
+
+      config.enabled = enabled;
+      save(data);
+
+      return interaction.reply(
+        `👋 Welcome system is now **${
+          enabled ? "enabled 🟢" : "disabled 🔴"
+        }**.`
+      );
+    }
 
     if (sub === "test") {
       if (!config.channelId) {
         return interaction.reply({
           content:
-            "❌ Welcome system isn't configured yet.",
+            "❌ Welcome system isn't configured.",
           ephemeral: true
         });
       }
@@ -282,75 +213,17 @@ module.exports = {
       if (!channel) {
         return interaction.reply({
           content:
-            "❌ Configured welcome channel no longer exists.",
+            "❌ Welcome channel no longer exists.",
           ephemeral: true
         });
       }
 
-      const replace = text =>
-        String(text || "")
-          .replaceAll(
-            "{user}",
-            `<@${interaction.user.id}>`
-          )
-          .replaceAll(
-            "{username}",
-            interaction.user.username
-          )
-          .replaceAll(
-            "{server}",
-            interaction.guild.name
-          )
-          .replaceAll(
-            "{membercount}",
-            String(interaction.guild.memberCount)
-          );
+      const welcomeEvent =
+        require("../events/welcome");
 
-      const payload = {};
-
-      if (config.message) {
-        payload.content =
-          replace(config.message);
-      }
-
-      if (
-        config.title ||
-        config.description ||
-        config.image ||
-        config.thumbnail ||
-        config.footer
-      ) {
-        const embed =
-          new EmbedBuilder()
-            .setColor(
-              config.color || "#5865F2"
-            );
-
-        if (config.title)
-          embed.setTitle(
-            replace(config.title)
-          );
-
-        if (config.description)
-          embed.setDescription(
-            replace(config.description)
-          );
-
-        if (config.image)
-          embed.setImage(config.image);
-
-        if (config.thumbnail)
-          embed.setThumbnail(config.thumbnail);
-
-        if (config.footer)
-          embed.setFooter({
-            text: replace(config.footer)
-          });
-
-        payload.embeds = [embed];
-      }
-
-      await channel.send(payload);
+      await welcomeEvent.sendWelcome(
+        interaction.member
+      );
 
       return interaction.reply({
         content:

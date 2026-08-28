@@ -24,8 +24,10 @@ function replaceCustomEmojis(text, member) {
   return String(text || "").replace(
     /:([a-zA-Z0-9_]+):/g,
     (match, name) => {
+      const wanted = name.toLowerCase();
+
       const emoji = member.guild.emojis.cache.find(
-        e => e.name === name
+        e => e.name && e.name.toLowerCase() === wanted
       );
 
       return emoji ? emoji.toString() : match;

@@ -18,6 +18,7 @@ const {
 
 const autoMod = require("./automod/autoMod");
 const antiNuke = require("./antinuke/antiNuke");
+const autoRole = require("./events/autorole");
 
 const autoResponder = require("./events/autoresponder");
 
@@ -104,6 +105,21 @@ for (const file of commandFiles) {
     );
   }
 }
+
+// =====================================
+// AUTOROLE
+// =====================================
+
+client.on("guildMemberAdd", async member => {
+  try {
+    await autoRole.handle(member);
+  } catch (error) {
+    console.error(
+      "❌ Autorole Error:",
+      error
+    );
+  }
+});
 
 // =====================================
 // ROLE PING

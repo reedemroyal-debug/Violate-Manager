@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title><%= guild.name %> | VIOLATE MANAGER</title>
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+
+    <div class="logo">
+
+      <div class="logo-box">
+        V
+      </div>
+
+      <div>
+        <h2>VIOLATE</h2>
+        <span>MANAGER</span>
+      </div>
+
+    </div>
+
+    <nav>
+
+      <a href="/" >
+        ← Servers
+      </a>
+
+      <a class="active">
+        ⌂ Overview
+      </a>
+
+      <a>
+        🛡 Moderation
+      </a>
+
+      <a>
+        🎫 Tickets
+      </a>
+
+      <a>
+        🎵 Music
+      </a>
+
+      <a>
+        🎁 Giveaways
+      </a>
+
+      <a>
+        📋 Logs
+      </a>
+
+      <a>
+        👥 Roles
+      </a>
+
+      <a>
+        ⚙ Settings
+      </a>
+
+    </nav>
+
+    <div class="bot-status">
+
+      <span class="dot"></span>
+
+      <div>
+        <b>Bot Online</b>
+        <small>VIOLATE MANAGER</small>
+      </div>
+
+    </div>
+
+  </aside>
+
+
+  <main>
+
+    <header>
+
+      <div class="server-title">
+
+        <% if (guild.icon) { %>
+
+          <img
+            class="guild-icon"
+            src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png?size=128"
+            alt="<%= guild.name %>"
+          >
+
+        <% } else { %>
+
+          <div class="guild-icon fallback">
+            <%= guild.name.charAt(0).toUpperCase() %>
+          </div>
+
+        <% } %>
+
+        <div>
+
+          <p class="eyebrow">
+            SERVER DASHBOARD
+          </p>
+
+          <h1>
+            <%= guild.name %>
+          </h1>
+
+          <p class="muted">
+            Manage your server with VIOLATE MANAGER.
+          </p>
+
+        </div>
+
+      </div>
+
+      <a href="/logout" class="logout">
+        Logout
+      </a>
+
+    </header>
+
+
+    <section class="stats">
+
+      <div class="card">
+
+        <span>
+          SERVER ID
+        </span>
+
+        <strong class="small-value">
+          <%= guild.id %>
+        </strong>
+
+        <small>
+          Discord Guild ID
+        </small>
+
+      </div>
+
+
+      <div class="card">
+
+        <span>
+          BOT
+        </span>
+
+        <strong>
+          ONLINE
+        </strong>
+
+        <small>
+          VIOLATE MANAGER
+        </small>
+
+      </div>
+
+
+      <div class="card">
+
+        <span>
+          COMMANDS
+        </span>
+
+        <strong>
+          19
+        </strong>
+
+        <small>
+          Available commands
+        </small>
+
+      </div>
+
+
+      <div class="card">
+
+        <span>
+          STATUS
+        </span>
+
+        <strong>
+          READY
+        </strong>
+
+        <small>
+          Dashboard connected
+        </small>
+
+      </div>
+
+    </section>
+
+
+    <section class="panel">
+
+      <div class="panel-head">
+
+        <div>
+
+          <p class="eyebrow">
+            MANAGEMENT
+          </p>
+
+          <h2>
+            Server Controls
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <div class="feature-grid">
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            🛡️
+          </div>
+
+          <div>
+
+            <strong>
+              Moderation
+            </strong>
+
+            <small>
+              Ban, kick, warn and manage users.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            🎫
+          </div>
+
+          <div>
+
+            <strong>
+              Ticket System
+            </strong>
+
+            <small>
+              Configure your support ticket system.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            🎁
+          </div>
+
+          <div>
+
+            <strong>
+              Giveaways
+            </strong>
+
+            <small>
+              Create and manage giveaways.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            🎵
+          </div>
+
+          <div>
+
+            <strong>
+              Music
+            </strong>
+
+            <small>
+              Control the music system.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            📋
+          </div>
+
+          <div>
+
+            <strong>
+              Logs
+            </strong>
+
+            <small>
+              View server and moderation logs.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            👥
+          </div>
+
+          <div>
+
+            <strong>
+              Roles
+            </strong>
+
+            <small>
+              Configure staff and bot roles.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            📢
+          </div>
+
+          <div>
+
+            <strong>
+              Role Ping
+            </strong>
+
+            <small>
+              Manage role ping settings.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+        <a class="feature-card">
+
+          <div class="feature-icon">
+            ⚙️
+          </div>
+
+          <div>
+
+            <strong>
+              Settings
+            </strong>
+
+            <small>
+              Configure VIOLATE MANAGER.
+            </small>
+
+          </div>
+
+          <span>
+            →
+          </span>
+
+        </a>
+
+
+      </div>
+
+    </section>
+
+
+    <section class="panel">
+
+      <div class="panel-head">
+
+        <p class="eyebrow">
+          BOT INFORMATION
+        </p>
+
+        <h2>
+          VIOLATE MANAGER
+        </h2>
+
+      </div>
+
+
+      <div class="info-grid">
+
+        <div>
+          <span>
+            Account
+          </span>
+
+          <strong>
+            <%= user.username %>
+          </strong>
+        </div>
+
+
+        <div>
+          <span>
+            Server
+          </span>
+
+          <strong>
+            <%= guild.name %>
+          </strong>
+        </div>
+
+
+        <div>
+          <span>
+            Bot Status
+          </span>
+
+          <strong class="online">
+            ● Online
+          </strong>
+        </div>
+
+
+        <div>
+          <span>
+            Dashboard
+          </span>
+
+          <strong>
+            Connected
+          </strong>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+node_modules/
+.env
+data/*.json
+
+# Local secrets, backups and generated files
+.env
+*.bak
+*.backup*
+*.old.js
+violate-manager.zip
+src/utils/ticketConfig.before-*.json

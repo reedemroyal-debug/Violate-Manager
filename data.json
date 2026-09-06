@@ -1,0 +1,455 @@
+{
+  "warnings": {
+    "935825319418544209": [
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "checking",
+        "time": 1787468435294
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1787570286454
+      }
+    ],
+    "1385618234023088159": [
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1787486472173
+      }
+    ],
+    "1525897250314784930": [
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1787486846781
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1787487478652
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1787487478663
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1787570268372
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787721225623
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787721292566
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787721308372
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1787721333073
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1787721333862
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1787721334363
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1787721334833
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1787721336643
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787721865360
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787721913028
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787721961039
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787722490773
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787723053857
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787723082813
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Blocked word detected: bc",
+        "time": 1787723120891
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787723486299
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Blocked word detected",
+        "time": 1787723538660
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787723556818
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787724002861
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787724604266
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1787725021839
+      }
+    ],
+    "1481643463895420999": [
+      {
+        "guild": "1500378224163815637",
+        "by": "1350726344648036402",
+        "reason": "checking",
+        "time": 1787570141706
+      }
+    ],
+    "1521188277300891690": [
+      {
+        "guild": "1500378224163815637",
+        "by": "1350726344648036402",
+        "reason": "I'm dev",
+        "time": 1787717930653
+      }
+    ],
+    "1533078936433721386": [
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491618979
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491618984
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491619628
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491619678
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491620101
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491620103
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491621624
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491625450
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491625497
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491626074
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491626444
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491626816
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491627279
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491632370
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491632486
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491632980
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491634100
+      },
+      {
+        "guild": "1500378224163815637",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Spam detected",
+        "time": 1788491639366
+      }
+    ]
+  },
+  "tickets": {
+    "1540979159763779584": {
+      "guild": "1538572310083149945",
+      "owner": "1350726344648036402",
+      "type": "general",
+      "closed": true,
+      "claimed": null
+    }
+  },
+  "automodViolations": {
+    "1538572310083149945": {
+      "1525897250314784930": [
+        {
+          "reason": "Discord invite detected",
+          "time": 1787721224897
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787721291510
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787721307422
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1787721332352
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1787721333029
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1787721333747
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1787721334368
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1787721336102
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787721864632
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787721912317
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787721960376
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787722489635
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787723485541
+        },
+        {
+          "reason": "Blocked word detected",
+          "time": 1787723538196
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787723556114
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787724001604
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787724603360
+        },
+        {
+          "reason": "Discord invite detected",
+          "time": 1787725020961
+        }
+      ]
+    },
+    "1500378224163815637": {
+      "1533078936433721386": [
+        {
+          "reason": "Spam detected",
+          "time": 1788491618181
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491618184
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491618973
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491618990
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491619529
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491620295
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491621131
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491621670
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491621673
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491622166
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491622171
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491622762
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491622770
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491623271
+        },
+        {
+          "reason": "Spam detected",
+          "time": 1788491623271
+        }
+      ]
+    }
+  }
+}

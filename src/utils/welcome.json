@@ -1,0 +1,14 @@
+{
+  "1538572310083149945": {
+    "enabled": true,
+    "channelId": "1542920307822829586",
+    "title": "<a:Medal:1507411457141117049>  Welcome to {server}!",
+    "description": "Hey {user}! <a:heart_gif:1507411454381527151> \n\nWelcome to **{server}**! <:emoji_41:1507951442214785055> \nWe're really happy to have you here. 💙\n\n<a:red_check:1419741525847310336>  You are our **#{membercount}** member!\n\n<a:Arrow_Red:1354392969251127326>  Make sure to check the rules and explore the server.\n<a:Arrow_Red:1354392969251127326>  Meet the community, have fun, and enjoy your stay!\n\n<a:Arrow_Red:1354392969251127326>  If you need any help, our staff team is always here for you.\n\n━━━━━━━━━━━━━━━━━━━━\n<a:hyper_staff:1494202473340993588>  Welcome to the family!",
+    "color": "#5865F2",
+    "message": null,
+    "image": null,
+    "thumbnail": null,
+    "footer": null,
+    "emoji": null
+  }
+}

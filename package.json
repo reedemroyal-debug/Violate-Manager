@@ -1,0 +1,20 @@
+{
+  "name": "violate-manager",
+  "version": "5.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@discord-player/extractor": "^7.2.0",
+    "@discordjs/voice": "^0.19.2",
+    "@ishubhamx/panchangam-js": "^3.0.0",
+    "discord-player": "^7.2.0",
+    "discord.js": "^14.24.2",
+    "dotenv": "^17.2.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "openai": "^7.10.0"
+  }
+}

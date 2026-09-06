@@ -1,4 +1,5 @@
 const ticketSystem = require("./events/ticketSystem");
+const inviteTracker = require("./events/inviteTracker");
 const festival = require("./events/festival");
 require("dotenv").config();
 
@@ -21,6 +22,9 @@ const {
 const autoMod = require("./automod/autoMod");
 const antiNuke = require("./antinuke/antiNuke");
 const autoRole = require("./events/autorole");
+const welcome = require("./events/welcome");
+
+
 const autoResponder = require("./events/autoresponder");
 
 
@@ -103,6 +107,14 @@ for (const file of commandFiles) {
     );
   }
 }
+
+client.on("guildMemberAdd", async member => {
+  try {
+    await welcome.handle(member);
+  } catch (error) {
+    console.error("❌ Welcome Error:", error);
+  }
+});
 
 // =====================================
 // AUTOROLE
@@ -256,6 +268,7 @@ client.on(
 
 client.once("ready", async () => {
   festival.init(client);
+  await inviteTracker.init(client);
   console.log(
     `🤖 Logged in as ${client.user.tag}`
   );
@@ -298,6 +311,27 @@ client.once("ready", async () => {
       "❌ Command registration failed:",
       error
     );
+  }
+});
+
+
+// =====================================
+// INVITE TRACKER
+// =====================================
+
+client.on("guildMemberAdd", async member => {
+  try {
+    await inviteTracker.handleJoin(member);
+  } catch (error) {
+    console.error("❌ Invite Join Error:", error);
+  }
+});
+
+client.on("guildMemberRemove", async member => {
+  try {
+    await inviteTracker.handleLeave(member);
+  } catch (error) {
+    console.error("❌ Invite Leave Error:", error);
   }
 });
 

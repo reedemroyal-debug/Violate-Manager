@@ -3,444 +3,144 @@ const {
   PermissionFlagsBits
 } = require("discord.js");
 
-const {
-  getConfig,
-  getPunishment
-} = require("../automod/config");
-
-const {
-  load,
-  save
-} = require("../utils/db");
-
-const {
-  sendLog,
-  sendDM
-} = require("../utils/modLogger");
-
-// =====================================
-// MEMORY
-// =====================================
+const { getConfig } = require("../automod/config");
+const { sendLog, sendDM } = require("../utils/modLogger");
 
 const actionCache = new Map();
+const initializedClients = new WeakSet();
 
-// =====================================
-// ACTION TYPES
-// =====================================
+const WINDOW = 10000;
 
-const ACTIONS = {
-  channelDelete: AuditLogEvent.ChannelDelete,
-  channelCreate: AuditLogEvent.ChannelCreate,
-  roleDelete: AuditLogEvent.RoleDelete,
-  roleCreate: AuditLogEvent.RoleCreate,
-  ban: AuditLogEvent.MemberBanAdd,
-  kick: AuditLogEvent.MemberKick,
-  webhookCreate: AuditLogEvent.WebhookCreate
-};
+function getGuildConfig(guild) {
+  const config = getConfig(guild.id);
 
-// =====================================
-// BYPASS
-// =====================================
+  config.antiNuke ??= {};
+  const n = config.antiNuke;
 
-function isBypass(member, config) {
-  if (!member) {
-    return false;
-  }
+  n.enabled ??= true;
+  n.trustedUsers ??= [];
+  n.trustedRoles ??= [];
+
+  n.channelDelete ??= {
+    enabled: true,
+    maxActions: 3,
+    interval: 10000
+  };
+
+  n.channelCreate ??= {
+    enabled: true,
+    maxActions: 5,
+    interval: 10000
+  };
+
+  n.roleDelete ??= {
+    enabled: true,
+    maxActions: 3,
+    interval: 10000
+  };
+
+  n.roleCreate ??= {
+    enabled: true,
+    maxActions: 5,
+    interval: 10000
+  };
+
+  n.ban ??= {
+    enabled: true,
+    maxActions: 3,
+    interval: 10000
+  };
+
+  n.kick ??= {
+    enabled: true,
+    maxActions: 5,
+    interval: 10000
+  };
+
+  n.webhookCreate ??= {
+    enabled: true,
+    maxActions: 3,
+    interval: 10000
+  };
+
+  n.punishment ??= {
+    timeout: true,
+    timeoutMinutes: 30,
+    kick: false,
+    ban: true
+  };
+
+  return n;
+}
+
+function isTrusted(member, config) {
+  if (!member) return false;
 
   if (
-    config.bypass?.administrators &&
-    member.permissions.has(
-      PermissionFlagsBits.Administrator
-    )
+    member.permissions.has(PermissionFlagsBits.Administrator)
   ) {
     return true;
   }
 
-  if (
-    config.bypass?.moderators &&
-    member.permissions.has(
-      PermissionFlagsBits.ManageGuild
-    )
-  ) {
+  if (config.trustedUsers?.includes(member.id)) {
     return true;
   }
 
-  const roles =
-    config.bypass?.roles || [];
-
-  return member.roles.cache.some(
-    role => roles.includes(role.id)
+  return member.roles.cache.some(role =>
+    config.trustedRoles?.includes(role.id)
   );
 }
 
-// =====================================
-// CACHE KEY
-// =====================================
+function recordAction(guildId, userId, type, limit, interval = WINDOW) {
+  const key = `${guildId}:${userId}:${type}`;
+  const now = Date.now();
 
-function getCacheKey(
-  guildId,
-  executorId,
-  action
-) {
-  return `${guildId}:${executorId}:${action}`;
-}
+  const list = actionCache.get(key) || [];
 
-// =====================================
-// RECORD ACTION
-// =====================================
+  list.push(now);
 
-function recordAction(
-  guildId,
-  executorId,
-  action,
-  interval
-) {
-  const key =
-    getCacheKey(
-      guildId,
-      executorId,
-      action
-    );
-
-  const now =
-    Date.now();
-
-  const existing =
-    actionCache.get(key) || [];
-
-  const filtered =
-    existing.filter(
-      time =>
-        now - time <= interval
-    );
-
-  filtered.push(now);
-
-  actionCache.set(
-    key,
-    filtered
+  const filtered = list.filter(
+    time => now - time <= interval
   );
 
-  return filtered.length;
-}
-
-// =====================================
-// VIOLATION STORAGE
-// =====================================
-
-function addViolation(
-  guildId,
-  userId,
-  reason
-) {
-  const db =
-    load();
-
-  db.antiNukeViolations ??= {};
-  db.antiNukeViolations[guildId] ??= {};
-  db.antiNukeViolations[guildId][userId] ??= [];
-
-  db.antiNukeViolations[guildId][userId].push({
-    reason,
-    time: Date.now()
-  });
-
-  const cutoff =
-    Date.now() -
-    24 * 60 * 60 * 1000;
-
-  db.antiNukeViolations[guildId][userId] =
-    db.antiNukeViolations[guildId][userId]
-      .filter(
-        item =>
-          item.time >= cutoff
-      );
-
-  save(db);
-
-  return db.antiNukeViolations[guildId][userId]
-    .length;
-}
-
-// =====================================
-// PUNISHMENT NAME
-// =====================================
-
-function punishmentName(action) {
-  switch (action) {
-    case "timeout":
-      return "Timeout";
-
-    case "kick":
-      return "Kick";
-
-    case "ban":
-      return "Ban";
-
-    case "warn":
-    default:
-      return "Warn";
-  }
-}
-
-// =====================================
-// EXECUTE PUNISHMENT
-// =====================================
-
-async function punish(
-  guild,
-  executor,
-  reason,
-  config,
-  violations
-) {
-  const punishment =
-    getPunishment(
-      config,
-      "antiNuke"
-    ) || config.antiNuke?.punishment || {};
-
-  let action =
-    String(
-      punishment.action ||
-      punishment.type ||
-      ""
-    ).toLowerCase();
-
-  if (!action) {
-    if (punishment.ban) {
-      action = "ban";
-    } else if (punishment.kick) {
-      action = "kick";
-    } else if (punishment.timeout) {
-      action = "timeout";
-    } else {
-      action = "warn";
-    }
-  }
-
-  const required =
-    Number(
-      punishment.violations
-    ) || 1;
-
-  if (violations < required) {
-    return {
-      action: "warn",
-      success: false,
-      skipped: true
-    };
-  }
-
-  let member =
-    guild.members.cache.get(
-      executor.id
-    );
-
-  if (!member) {
-    member =
-      await guild.members
-        .fetch(executor.id)
-        .catch(() => null);
-  }
-
-  let success = false;
-  let resultReason = "Completed";
-
-  // ===================================
-  // WARN
-  // ===================================
-
-  if (action === "warn") {
-    try {
-      const db =
-        load();
-
-      db.warnings ??= {};
-      db.warnings[executor.id] ??= [];
-
-      db.warnings[executor.id].push({
-        guild: guild.id,
-        by: guild.client.user.id,
-        reason: `AntiNuke: ${reason}`,
-        time: Date.now()
-      });
-
-      save(db);
-
-      success = true;
-    } catch (error) {
-      resultReason =
-        error.message;
-    }
-  }
-
-  // ===================================
-  // TIMEOUT
-  // ===================================
-
-  else if (action === "timeout") {
-    if (!member) {
-      resultReason =
-        "Member not found.";
-    } else if (!member.moderatable) {
-      resultReason =
-        "Bot cannot timeout this member.";
-    } else {
-      const minutes =
-        Number(
-          punishment.timeoutMinutes
-        ) || 30;
-
-      try {
-        await member.timeout(
-          minutes * 60 * 1000,
-          `AntiNuke: ${reason}`
-        );
-
-        success = true;
-      } catch (error) {
-        resultReason =
-          error.message;
-      }
-    }
-  }
-
-  // ===================================
-  // KICK
-  // ===================================
-
-  else if (action === "kick") {
-    if (!member) {
-      resultReason =
-        "Member not found.";
-    } else if (!member.kickable) {
-      resultReason =
-        "Bot cannot kick this member.";
-    } else {
-      try {
-        await member.kick(
-          `AntiNuke: ${reason}`
-        );
-
-        success = true;
-      } catch (error) {
-        resultReason =
-          error.message;
-      }
-    }
-  }
-
-  // ===================================
-  // BAN
-  // ===================================
-
-  else if (action === "ban") {
-    if (!member) {
-      resultReason =
-        "Member not found.";
-    } else if (!member.bannable) {
-      resultReason =
-        "Bot cannot ban this member.";
-    } else {
-      try {
-        await member.ban({
-          reason:
-            `AntiNuke: ${reason}`
-        });
-
-        success = true;
-      } catch (error) {
-        resultReason =
-          error.message;
-      }
-    }
-  }
-
-  // ===================================
-  // DM
-  // ===================================
-
-  try {
-    await sendDM({
-      guild,
-      target: executor,
-      action: punishmentName(action),
-      reason,
-      moderator: guild.client.user,
-      duration:
-        action === "timeout"
-          ? `${Number(
-              punishment.timeoutMinutes
-            ) || 30} minutes`
-          : undefined
-    });
-  } catch {}
-
-  // ===================================
-  // LOG
-  // ===================================
-
-  try {
-    await sendLog({
-      guild,
-      type: "mod",
-      title: "🛡️ AntiNuke Action",
-      action: punishmentName(action),
-      target: executor,
-      moderator: guild.client.user,
-      reason:
-        `${reason} | Violations: ${violations}`,
-      duration:
-        action === "timeout"
-          ? `${Number(
-              punishment.timeoutMinutes
-            ) || 30} minutes`
-          : undefined
-    });
-  } catch (error) {
-    console.error(
-      "❌ AntiNuke log failed:",
-      error.message
-    );
-  }
+  actionCache.set(key, filtered);
 
   return {
-    action,
-    success,
-    skipped: false,
-    resultReason,
-    violations
+    count: filtered.length,
+    triggered: filtered.length >= limit
   };
 }
 
-// =====================================
-// AUDIT LOG EXECUTOR
-// =====================================
+function clearUser(guildId, userId) {
+  for (const key of actionCache.keys()) {
+    if (key.startsWith(`${guildId}:${userId}:`)) {
+      actionCache.delete(key);
+    }
+  }
+}
 
-async function getExecutor(
-  guild,
-  auditType,
-  targetId
-) {
+async function getExecutor(guild, auditType, targetId = null) {
   try {
-    const logs =
-      await guild.fetchAuditLogs({
-        type: auditType,
-        limit: 10
-      });
+    const logs = await guild.fetchAuditLogs({
+      type: auditType,
+      limit: 10
+    });
 
-    const entry =
-      logs.entries.find(
-        item =>
-          (!targetId ||
-            item.target?.id === targetId) &&
-          Date.now() -
-            item.createdTimestamp <
-            15000
-      );
+    const now = Date.now();
 
-    return entry || null;
+    const entry = logs.entries.find(entry => {
+      if (now - entry.createdTimestamp > 15000) {
+        return false;
+      }
+
+      if (targetId && entry.target?.id !== targetId) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return entry?.executor || null;
   } catch (error) {
     console.error(
       "❌ AntiNuke audit log error:",
@@ -451,321 +151,371 @@ async function getExecutor(
   }
 }
 
-// =====================================
-// HANDLE ACTION
-// =====================================
-
-async function processAction(
-  guild,
-  action,
-  targetId = null
-) {
-  const config =
-    getConfig(guild.id);
-
-  if (
-    !config.antiNuke ||
-    !config.antiNuke.enabled
-  ) {
+async function punish(guild, executor, reason) {
+  if (!executor || executor.bot) {
     return false;
   }
 
-  const actionConfig =
-    config.antiNuke[action];
-
-  if (
-    !actionConfig ||
-    !actionConfig.enabled
-  ) {
-    return false;
-  }
-
-  const auditType =
-    ACTIONS[action];
-
-  if (!auditType) {
-    return false;
-  }
-
-  const entry =
-    await getExecutor(
-      guild,
-      auditType,
-      targetId
-    );
-
-  if (!entry || !entry.executor) {
-    return false;
-  }
-
-  const executor =
-    entry.executor;
-
-  if (
-    executor.bot &&
-    executor.id === guild.client.user.id
-  ) {
-    return false;
-  }
+  const config = getGuildConfig(guild);
 
   let member =
-    guild.members.cache.get(
-      executor.id
-    );
+    guild.members.cache.get(executor.id) ||
+    await guild.members.fetch(executor.id).catch(() => null);
 
   if (!member) {
-    member =
-      await guild.members
-        .fetch(executor.id)
-        .catch(() => null);
-  }
-
-  if (
-    member &&
-    isBypass(member, config)
-  ) {
     return false;
   }
 
-  const maxActions =
-    Number(
-      actionConfig.maxActions
-    ) || 1;
+  if (isTrusted(member, config)) {
+    return false;
+  }
 
-  const interval =
-    Number(
-      actionConfig.interval
-    ) || 10000;
+  let punished = false;
 
-  const count =
-    recordAction(
-      guild.id,
-      executor.id,
-      action,
-      interval
+  // Remove dangerous roles first
+  try {
+    if (member.manageable) {
+      const removableRoles = member.roles.cache.filter(role =>
+        role.editable &&
+        (
+          role.permissions.has(PermissionFlagsBits.Administrator) ||
+          role.permissions.has(PermissionFlagsBits.ManageGuild) ||
+          role.permissions.has(PermissionFlagsBits.ManageChannels) ||
+          role.permissions.has(PermissionFlagsBits.ManageRoles) ||
+          role.permissions.has(PermissionFlagsBits.BanMembers) ||
+          role.permissions.has(PermissionFlagsBits.KickMembers)
+        )
+      );
+
+      for (const role of removableRoles.values()) {
+        await member.roles.remove(role).catch(() => {});
+      }
+    }
+  } catch {}
+
+  // Timeout first
+  try {
+    if (member.moderatable) {
+      await member.timeout(
+        60 * 60 * 1000,
+        `AntiNuke: ${reason}`
+      );
+
+      punished = true;
+    }
+  } catch (error) {
+    console.error(
+      "❌ AntiNuke timeout failed:",
+      error.message
     );
-
-  if (count < maxActions) {
-    return false;
   }
 
-  const reason =
-    getReason(action, count, maxActions);
+  // Ban if possible
+  try {
+    if (member.bannable) {
+      await member.ban({
+        reason: `AntiNuke: ${reason}`
+      });
 
-  const violations =
-    addViolation(
-      guild.id,
-      executor.id,
+      punished = true;
+    }
+  } catch (error) {
+    console.error(
+      "❌ AntiNuke ban failed:",
+      error.message
+    );
+  }
+
+  try {
+    await sendDM({
+      guild,
+      target: executor,
+      action: "Ban",
+      reason: `AntiNuke: ${reason}`,
+      moderator: guild.client.user
+    });
+  } catch {}
+
+  try {
+    await sendLog({
+      guild,
+      type: "security",
+      title: "🚨 AntiNuke Triggered",
+      action: "BAN",
+      target: executor,
+      moderator: guild.client.user,
       reason
-    );
+    });
+  } catch {}
 
-  return punish(
+  return punished;
+}
+
+async function detect(guild, executor, type, limit, reason) {
+  if (!executor) return;
+
+  const config = getGuildConfig(guild);
+
+  if (!config.enabled) return;
+
+  if (executor.bot) return;
+
+  const member =
+    guild.members.cache.get(executor.id) ||
+    await guild.members.fetch(executor.id).catch(() => null);
+
+  if (!member || isTrusted(member, config)) {
+    return;
+  }
+
+  const result = recordAction(
+    guild.id,
+    executor.id,
+    type,
+    limit
+  );
+
+  if (!result.triggered) {
+    return;
+  }
+
+  await punish(
     guild,
     executor,
-    reason,
-    config,
-    violations
+    `${reason} (${result.count} actions in ${WINDOW / 1000}s)`
+  );
+
+  clearUser(guild.id, executor.id);
+}
+
+async function channelDelete(channel) {
+  const guild = channel.guild;
+  if (!guild) return;
+
+  const config = getGuildConfig(guild);
+  if (!config.enabled) return;
+
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.ChannelDelete,
+    channel.id
+  );
+
+  await detect(
+    guild,
+    executor,
+    "channelDelete",
+    config.channelDelete?.maxActions || 3,
+    "Mass channel deletion detected"
   );
 }
 
-// =====================================
-// REASON
-// =====================================
+async function channelCreate(channel) {
+  const guild = channel.guild;
+  if (!guild) return;
 
-function getReason(
-  action,
-  count,
-  max
-) {
-  const names = {
-    channelDelete:
-      "Too many channels deleted",
+  const config = getGuildConfig(guild);
+  if (!config.enabled) return;
 
-    channelCreate:
-      "Too many channels created",
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.ChannelCreate,
+    channel.id
+  );
 
-    roleDelete:
-      "Too many roles deleted",
-
-    roleCreate:
-      "Too many roles created",
-
-    ban:
-      "Mass ban detected",
-
-    kick:
-      "Mass kick detected",
-
-    webhookCreate:
-      "Too many webhooks created"
-  };
-
-  return `${
-    names[action] || "Suspicious server activity"
-  } (${count}/${max} actions)`;
+  await detect(
+    guild,
+    executor,
+    "channelCreate",
+    config.channelCreate?.maxActions || 5,
+    "Mass channel creation detected"
+  );
 }
 
-// =====================================
-// EVENT HANDLER
-// =====================================
+async function roleDelete(role) {
+  const guild = role.guild;
+  const config = getGuildConfig(guild);
 
-async function handle(
-  event
-) {
-  try {
-    if (!event) {
-      return false;
-    }
+  if (!config.enabled) return;
 
-    /*
-     * Supported input:
-     *
-     * handle({
-     *   guild,
-     *   action,
-     *   targetId
-     * })
-     */
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.RoleDelete,
+    role.id
+  );
 
-    const guild =
-      event.guild;
+  await detect(
+    guild,
+    executor,
+    "roleDelete",
+    config.roleDelete?.maxActions || 3,
+    "Mass role deletion detected"
+  );
+}
 
-    if (!guild) {
-      return false;
-    }
+async function roleCreate(role) {
+  const guild = role.guild;
+  const config = getGuildConfig(guild);
 
-    const action =
-      event.action;
+  if (!config.enabled) return;
 
-    if (!ACTIONS[action]) {
-      return false;
-    }
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.RoleCreate,
+    role.id
+  );
 
-    return await processAction(
-      guild,
-      action,
-      event.targetId || null
-    );
-  } catch (error) {
-    console.error(
-      "❌ AntiNuke System Error:",
-      error
-    );
+  await detect(
+    guild,
+    executor,
+    "roleCreate",
+    config.roleCreate?.maxActions || 5,
+    "Mass role creation detected"
+  );
+}
 
-    return false;
+async function guildBanAdd(ban) {
+  const guild = ban.guild;
+  const config = getGuildConfig(guild);
+
+  if (!config.enabled) return;
+
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.MemberBanAdd,
+    ban.user.id
+  );
+
+  await detect(
+    guild,
+    executor,
+    "ban",
+    config.ban?.maxActions || 3,
+    "Mass ban detected"
+  );
+}
+
+async function guildMemberRemove(member) {
+  const guild = member.guild;
+  const config = getGuildConfig(guild);
+
+  if (!config.enabled) return;
+
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.MemberKick,
+    member.id
+  );
+
+  await detect(
+    guild,
+    executor,
+    "kick",
+    config.kick?.maxActions || 5,
+    "Mass kick detected"
+  );
+}
+
+async function webhookUpdate(channel) {
+  const guild = channel.guild;
+  if (!guild) return;
+
+  const config = getGuildConfig(guild);
+
+  if (!config.enabled) return;
+
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.WebhookCreate
+  );
+
+  await detect(
+    guild,
+    executor,
+    "webhookCreate",
+    config.webhookCreate?.maxActions || 3,
+    "Mass webhook creation detected"
+  );
+}
+
+async function guildMemberAdd(member) {
+  const guild = member.guild;
+
+  if (!member.user.bot) {
+    return;
   }
-}
 
-// =====================================
-// DIRECT AUDIT EVENT HANDLER
-// =====================================
+  const config = getGuildConfig(guild);
 
-async function handleAuditLog(
-  entry
-) {
-  try {
-    const guild =
-      entry.guild;
+  if (!config.enabled) return;
 
-    if (!guild) {
-      return false;
-    }
+  const executor = await getExecutor(
+    guild,
+    AuditLogEvent.BotAdd,
+    member.id
+  );
 
-    let action = null;
-
-    switch (entry.action) {
-      case AuditLogEvent.ChannelDelete:
-        action = "channelDelete";
-        break;
-
-      case AuditLogEvent.ChannelCreate:
-        action = "channelCreate";
-        break;
-
-      case AuditLogEvent.RoleDelete:
-        action = "roleDelete";
-        break;
-
-      case AuditLogEvent.RoleCreate:
-        action = "roleCreate";
-        break;
-
-      case AuditLogEvent.MemberBanAdd:
-        action = "ban";
-        break;
-
-      case AuditLogEvent.MemberKick:
-        action = "kick";
-        break;
-
-      case AuditLogEvent.WebhookCreate:
-        action = "webhookCreate";
-        break;
-
-      default:
-        return false;
-    }
-
-    return await processAction(
-      guild,
-      action,
-      entry.target?.id || null
-    );
-  } catch (error) {
-    console.error(
-      "❌ AntiNuke Audit Handler Error:",
-      error
-    );
-
-    return false;
+  if (!executor || executor.bot) {
+    return;
   }
+
+  const executorMember =
+    guild.members.cache.get(executor.id) ||
+    await guild.members.fetch(executor.id).catch(() => null);
+
+  if (!executorMember || isTrusted(executorMember, config)) {
+    return;
+  }
+
+  await member.kick(
+    "AntiNuke: Unauthorized bot addition"
+  ).catch(() => {});
+
+  await punish(
+    guild,
+    executor,
+    "Unauthorized bot was added to the server"
+  );
 }
 
-// =====================================
-// CLEAN MEMORY
-// =====================================
+function init(client) {
+  if (!client || initializedClients.has(client)) {
+    return;
+  }
 
-setInterval(
-  () => {
-    const now =
-      Date.now();
+  initializedClients.add(client);
 
-    for (
-      const [
-        key,
-        timestamps
-      ] of actionCache.entries()
-    ) {
-      const filtered =
-        timestamps.filter(
-          time =>
-            now - time <
-            60000
-        );
+  client.on("channelDelete", channelDelete);
+  client.on("channelCreate", channelCreate);
+  client.on("roleDelete", roleDelete);
+  client.on("roleCreate", roleCreate);
+  client.on("guildBanAdd", guildBanAdd);
+  client.on("guildMemberRemove", guildMemberRemove);
+  client.on("webhookUpdate", webhookUpdate);
+  client.on("guildMemberAdd", guildMemberAdd);
 
-      if (!filtered.length) {
-        actionCache.delete(key);
-      } else {
-        actionCache.set(
-          key,
-          filtered
-        );
-      }
+  console.log("🛡️ AntiNuke system initialized.");
+}
+
+setInterval(() => {
+  const cutoff = Date.now() - 60000;
+
+  for (const [key, timestamps] of actionCache.entries()) {
+    const filtered = timestamps.filter(
+      timestamp => timestamp > cutoff
+    );
+
+    if (filtered.length) {
+      actionCache.set(key, filtered);
+    } else {
+      actionCache.delete(key);
     }
-  },
-  60000
-).unref();
-
-// =====================================
-// EXPORT
-// =====================================
+  }
+}, 60000).unref();
 
 module.exports = {
-  handle,
-  handleAuditLog,
-  processAction,
-  isBypass,
-  addViolation,
+  init,
   punish,
+  detect,
   getExecutor
 };

@@ -237,6 +237,51 @@
       "moderators": true,
       "roles": []
     },
-    "logChannel": ""
+    "logChannel": "",
+    "punishments": {
+      "spam": "warn",
+      "link": "warn",
+      "invite": "warn",
+      "words": "warn",
+      "mentions": "warn"
+    }
+  },
+  "antiNuke": {
+    "enabled": true,
+    "channelDelete": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    },
+    "channelCreate": {
+      "enabled": true,
+      "maxActions": 5,
+      "interval": 10000
+    },
+    "roleDelete": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    },
+    "roleCreate": {
+      "enabled": true,
+      "maxActions": 5,
+      "interval": 10000
+    },
+    "ban": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    },
+    "kick": {
+      "enabled": true,
+      "maxActions": 5,
+      "interval": 10000
+    },
+    "webhookCreate": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    }
   }
 }

@@ -1,4 +1,6 @@
 const ticketSystem = require("./events/ticketSystem");
+const antiNukeCommand = require("./commands/antinuke");
+const autoModCommand = require("./commands/automod");
 const festival = require("./events/festival");
 require("dotenv").config();
 
@@ -45,6 +47,7 @@ if (!process.env.GUILD_ID) {
 // =====================================
 
 const client = new Client({
+
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
@@ -54,6 +57,7 @@ const client = new Client({
   ]
 });
 
+antiNuke.init(client);
 client.commands = new Collection();
 
 client.musicPlayer = createMusicPlayer(client);

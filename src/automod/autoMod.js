@@ -32,6 +32,25 @@ function isBypass(message, config) {
 
   if (!member) return true;
 
+  // Whitelisted channel
+  if (
+    config.bypass?.channels?.includes(
+      message.channel.id
+    )
+  ) {
+    return true;
+  }
+
+  // Whitelisted user
+  if (
+    config.bypass?.users?.includes(
+      message.author.id
+    )
+  ) {
+    return true;
+  }
+
+  // Administrator bypass
   if (
     config.bypass?.administrators &&
     member.permissions.has(
@@ -41,6 +60,7 @@ function isBypass(message, config) {
     return true;
   }
 
+  // Moderator bypass
   if (
     config.bypass?.moderators &&
     member.permissions.has(
@@ -50,6 +70,7 @@ function isBypass(message, config) {
     return true;
   }
 
+  // Whitelisted roles
   const bypassRoles =
     config.bypass?.roles || [];
 

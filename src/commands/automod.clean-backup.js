@@ -59,29 +59,18 @@ function punishmentText(value) {
   return names[value] || "⚠️ Warn";
 }
 
-function getAction(punishment) {
-  if (!punishment) return "warn";
-
-  if (punishment.ban) return "ban";
-  if (punishment.kick) return "kick";
-  if (punishment.timeout) return "timeout";
-  if (punishment.warn) return "warn";
-
-  return "warn";
-}
-
 function buildPanel(config) {
   const embed = new EmbedBuilder()
     .setTitle("🛡️ VIOLATE AUTOMOD")
     .setDescription(
       `**Global Status:** ${status(config.enabled)}\n\n` +
-      `💬 Anti-Spam: **${status(config.antiSpam.enabled)}** → ${punishmentText(getAction(config.antiSpam?.punishment))}\n` +
-      `🔗 Anti-Link: **${status(config.antiLink.enabled)}** → ${punishmentText(getAction(config.antiLink?.punishment))}\n` +
-      `📨 Anti-Invite: **${status(config.antiInvite.enabled)}** → ${punishmentText(getAction(config.antiInvite?.punishment))}\n` +
-      `🤬 Bad Words: **${status(config.wordFilter.enabled)}** → ${punishmentText(getAction(config.wordFilter?.punishment))}\n` +
-      `📢 Anti-Mention: **${status(config.antiMention.enabled)}** → ${punishmentText(getAction(config.antiMention?.punishment))}\n\n` +
-      `⚠️ Escalation after **${config.antiSpam?.punishment?.violations ?? 3} violations**\n` +
-      `⏱️ Default timeout: **${config.antiSpam?.punishment?.timeoutMinutes ?? 5} min**`
+      `💬 Anti-Spam: **${status(config.antiSpam.enabled)}** → ${punishmentText(config.punishments?.spam)}\n` +
+      `🔗 Anti-Link: **${status(config.antiLink.enabled)}** → ${punishmentText(config.punishments?.link)}\n` +
+      `📨 Anti-Invite: **${status(config.antiInvite.enabled)}** → ${punishmentText(config.punishments?.invite)}\n` +
+      `🤬 Bad Words: **${status(config.wordFilter.enabled)}** → ${punishmentText(config.punishments?.words)}\n` +
+      `📢 Anti-Mention: **${status(config.antiMention.enabled)}** → ${punishmentText(config.punishments?.mentions)}\n\n` +
+      `⚠️ Escalation after **${config.punishment.violations} violations**\n` +
+      `⏱️ Default timeout: **${config.punishment.timeoutMinutes} min**`
     )
     .setColor(config.enabled ? "#57F287" : "#ED4245")
     .setFooter({
@@ -138,12 +127,6 @@ function buildPanel(config) {
       .setStyle(ButtonStyle.Secondary),
 
     new ButtonBuilder()
-      .setCustomId("automod_thresholds")
-      .setLabel("Thresholds")
-      .setEmoji("⚙️")
-      .setStyle(ButtonStyle.Secondary),
-
-    new ButtonBuilder()
       .setCustomId("automod_refresh")
       .setLabel("Refresh")
       .setEmoji("🔄")
@@ -157,19 +140,13 @@ function buildPanel(config) {
 }
 
 function ensurePunishments(config) {
-  const defaults = {
-    warn: true,
-    timeout: false,
-    kick: false,
-    ban: false,
-    timeoutMinutes: 5,
-    violations: 3
-  };
+  config.punishments ??= {};
 
-  for (const rule of Object.values(RULES)) {
-    config[rule.key] ??= {};
-    config[rule.key].punishment ??= { ...defaults };
-  }
+  config.punishments.spam ??= "warn";
+  config.punishments.link ??= "warn";
+  config.punishments.invite ??= "warn";
+  config.punishments.words ??= "warn";
+  config.punishments.mentions ??= "warn";
 }
 
 function punishmentMenu(config) {
@@ -183,7 +160,7 @@ function punishmentMenu(config) {
         ([id, rule]) => ({
           label: rule.label,
           description: `Current: ${punishmentText(
-            getAction(config[RULES[id].key]?.punishment)
+            config.punishments[id]
           )}`,
           value: id,
           emoji: rule.emoji
@@ -230,88 +207,6 @@ function punishmentActionMenu(ruleId) {
     );
 
   return new ActionRowBuilder().addComponents(menu);
-}
-
-function thresholdPanel(config) {
-  const embed = new EmbedBuilder()
-    .setTitle("⚙️ AutoMod Thresholds")
-    .setDescription(
-      `💬 **Anti-Spam**\n` +
-      `Messages: **${config.antiSpam?.maxMessages ?? 5}**\n` +
-      `Interval: **${config.antiSpam?.interval ?? 5000}ms**\n\n` +
-      `📢 **Anti-Mention**\n` +
-      `Maximum mentions: **${config.antiMention?.maxMentions ?? 5}**\n\n` +
-      `Use the buttons below to change the limits.`
-    )
-    .setColor("#5865F2");
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("automod_spam_threshold")
-      .setLabel("Spam Settings")
-      .setEmoji("💬")
-      .setStyle(ButtonStyle.Primary),
-
-    new ButtonBuilder()
-      .setCustomId("automod_mention_threshold")
-      .setLabel("Mention Limit")
-      .setEmoji("📢")
-      .setStyle(ButtonStyle.Primary),
-
-    new ButtonBuilder()
-      .setCustomId("automod_threshold_back")
-      .setLabel("Back")
-      .setEmoji("↩️")
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  return {
-    embeds: [embed],
-    components: [row]
-  };
-}
-
-function spamThresholdModal(config) {
-  return new ModalBuilder()
-    .setCustomId("automod_spam_threshold_modal")
-    .setTitle("💬 Anti-Spam Settings")
-    .addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("maxMessages")
-          .setLabel("Maximum messages")
-          .setPlaceholder(String(config.antiSpam?.maxMessages ?? 5))
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setMaxLength(4)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("interval")
-          .setLabel("Interval in milliseconds")
-          .setPlaceholder(String(config.antiSpam?.interval ?? 5000))
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setMaxLength(7)
-      )
-    );
-}
-
-function mentionThresholdModal(config) {
-  return new ModalBuilder()
-    .setCustomId("automod_mention_threshold_modal")
-    .setTitle("📢 Mention Limit")
-    .addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("maxMentions")
-          .setLabel("Maximum mentions")
-          .setPlaceholder(String(config.antiMention?.maxMentions ?? 5))
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setMaxLength(3)
-      )
-    );
 }
 
 function wordsPanel(config) {
@@ -572,89 +467,6 @@ module.exports = {
       );
     }
 
-    else if (id === "automod_thresholds") {
-      return interaction.update(
-        thresholdPanel(config)
-      );
-    }
-
-    else if (id === "automod_threshold_back") {
-      return interaction.update(
-        buildPanel(config)
-      );
-    }
-
-    else if (id === "automod_spam_threshold") {
-      return interaction.showModal(
-        spamThresholdModal(config)
-      );
-    }
-
-    else if (id === "automod_mention_threshold") {
-      return interaction.showModal(
-        mentionThresholdModal(config)
-      );
-    }
-
-    else if (id === "automod_spam_threshold_modal") {
-      const maxMessages = Number(
-        interaction.fields.getTextInputValue("maxMessages")
-      );
-      const interval = Number(
-        interaction.fields.getTextInputValue("interval")
-      );
-
-      if (
-        !Number.isInteger(maxMessages) ||
-        maxMessages < 2 ||
-        maxMessages > 100 ||
-        !Number.isInteger(interval) ||
-        interval < 1000 ||
-        interval > 60000
-      ) {
-        return interaction.reply({
-          content: "❌ Use messages 2-100 and interval 1000-60000 ms.",
-          ephemeral: true
-        });
-      }
-
-      config.antiSpam.maxMessages = maxMessages;
-      config.antiSpam.interval = interval;
-
-      updateConfig(guildId, config);
-
-      return interaction.reply({
-        content: `✅ Anti-Spam updated: **${maxMessages} messages / ${interval}ms**.`,
-        ephemeral: true
-      });
-    }
-
-    else if (id === "automod_mention_threshold_modal") {
-      const maxMentions = Number(
-        interaction.fields.getTextInputValue("maxMentions")
-      );
-
-      if (
-        !Number.isInteger(maxMentions) ||
-        maxMentions < 1 ||
-        maxMentions > 50
-      ) {
-        return interaction.reply({
-          content: "❌ Mention limit must be between 1 and 50.",
-          ephemeral: true
-        });
-      }
-
-      config.antiMention.maxMentions = maxMentions;
-
-      updateConfig(guildId, config);
-
-      return interaction.reply({
-        content: `✅ Mention limit updated to **${maxMentions}**.`,
-        ephemeral: true
-      });
-    }
-
     else if (
       id === "automod_refresh"
     ) {
@@ -704,13 +516,8 @@ module.exports = {
         });
       }
 
-      const ruleKey = RULES[ruleId].key;
-      const punishment = config[ruleKey].punishment;
-
-      punishment.warn = selected === "warn";
-      punishment.timeout = selected === "timeout";
-      punishment.kick = selected === "kick";
-      punishment.ban = selected === "ban";
+      config.punishments[ruleId] =
+        selected;
 
       updateConfig(
         guildId,

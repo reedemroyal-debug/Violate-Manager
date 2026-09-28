@@ -136,6 +136,174 @@
       }
     },
     "antiLink": {
+      "enabled": true,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": false,
+        "timeout": true,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiInvite": {
+      "enabled": true,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": false,
+        "timeout": true,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "wordFilter": {
+      "enabled": true,
+      "words": [],
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiMention": {
+      "enabled": true,
+      "maxMentions": 5,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiNuke": {
+      "enabled": true,
+      "channelDelete": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "channelCreate": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "roleDelete": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "roleCreate": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "ban": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "kick": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "webhookCreate": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "punishment": {
+        "deleteMessage": false,
+        "warn": false,
+        "timeout": true,
+        "timeoutMinutes": 30,
+        "kick": true,
+        "ban": true,
+        "violations": 1
+      },
+      "trustedUsers": [],
+      "trustedRoles": [],
+      "logChannel": ""
+    },
+    "bypass": {
+      "administrators": true,
+      "moderators": true,
+      "roles": []
+    },
+    "logChannel": "",
+    "punishments": {
+      "spam": "warn",
+      "link": "warn",
+      "invite": "warn",
+      "words": "warn",
+      "mentions": "warn"
+    }
+  },
+  "antiNuke": {
+    "enabled": true,
+    "channelDelete": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    },
+    "channelCreate": {
+      "enabled": true,
+      "maxActions": 5,
+      "interval": 10000
+    },
+    "roleDelete": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    },
+    "roleCreate": {
+      "enabled": true,
+      "maxActions": 5,
+      "interval": 10000
+    },
+    "ban": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    },
+    "kick": {
+      "enabled": true,
+      "maxActions": 5,
+      "interval": 10000
+    },
+    "webhookCreate": {
+      "enabled": true,
+      "maxActions": 3,
+      "interval": 10000
+    }
+  },
+  "1548331811111833693": {
+    "enabled": true,
+    "antiSpam": {
+      "enabled": true,
+      "maxMessages": 5,
+      "interval": 5000,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiLink": {
       "enabled": false,
       "punishment": {
         "deleteMessage": true,
@@ -237,51 +405,246 @@
       "moderators": true,
       "roles": []
     },
-    "logChannel": "",
-    "punishments": {
-      "spam": "warn",
-      "link": "warn",
-      "invite": "warn",
-      "words": "warn",
-      "mentions": "warn"
-    }
+    "logChannel": ""
   },
-  "antiNuke": {
+  "1541060289607508078": {
     "enabled": true,
-    "channelDelete": {
+    "antiSpam": {
       "enabled": true,
-      "maxActions": 3,
-      "interval": 10000
+      "maxMessages": 5,
+      "interval": 5000,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
     },
-    "channelCreate": {
-      "enabled": true,
-      "maxActions": 5,
-      "interval": 10000
+    "antiLink": {
+      "enabled": false,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
     },
-    "roleDelete": {
+    "antiInvite": {
       "enabled": true,
-      "maxActions": 3,
-      "interval": 10000
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
     },
-    "roleCreate": {
-      "enabled": true,
-      "maxActions": 5,
-      "interval": 10000
+    "wordFilter": {
+      "enabled": false,
+      "words": [],
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
     },
-    "ban": {
+    "antiMention": {
       "enabled": true,
-      "maxActions": 3,
-      "interval": 10000
+      "maxMentions": 5,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
     },
-    "kick": {
+    "antiNuke": {
       "enabled": true,
-      "maxActions": 5,
-      "interval": 10000
+      "channelDelete": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "channelCreate": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "roleDelete": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "roleCreate": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "ban": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "kick": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "webhookCreate": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "punishment": {
+        "deleteMessage": false,
+        "warn": false,
+        "timeout": true,
+        "timeoutMinutes": 30,
+        "kick": false,
+        "ban": true,
+        "violations": 1
+      }
     },
-    "webhookCreate": {
+    "bypass": {
+      "administrators": true,
+      "moderators": true,
+      "roles": []
+    },
+    "logChannel": ""
+  },
+  "1494022587075002438": {
+    "enabled": true,
+    "antiSpam": {
       "enabled": true,
-      "maxActions": 3,
-      "interval": 10000
-    }
+      "maxMessages": 5,
+      "interval": 5000,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiLink": {
+      "enabled": false,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiInvite": {
+      "enabled": true,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "wordFilter": {
+      "enabled": false,
+      "words": [],
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiMention": {
+      "enabled": true,
+      "maxMentions": 5,
+      "punishment": {
+        "deleteMessage": true,
+        "warn": true,
+        "timeout": false,
+        "kick": false,
+        "ban": false,
+        "timeoutMinutes": 5,
+        "violations": 3
+      }
+    },
+    "antiNuke": {
+      "enabled": true,
+      "channelDelete": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "channelCreate": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "roleDelete": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "roleCreate": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "ban": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "kick": {
+        "enabled": true,
+        "maxActions": 5,
+        "interval": 10000
+      },
+      "webhookCreate": {
+        "enabled": true,
+        "maxActions": 3,
+        "interval": 10000
+      },
+      "punishment": {
+        "deleteMessage": false,
+        "warn": false,
+        "timeout": true,
+        "timeoutMinutes": 30,
+        "kick": false,
+        "ban": true,
+        "violations": 1
+      }
+    },
+    "bypass": {
+      "administrators": true,
+      "moderators": true,
+      "roles": []
+    },
+    "logChannel": ""
   }
 }

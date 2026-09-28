@@ -19,6 +19,9 @@ const {
   updateConfig
 } = require("../automod/config");
 
+const extraOwnerManager =
+  require("../utils/extraOwnerManager");
+
 const RULES = {
   channelDelete: ["🗑️", "Channel Delete", 3, 10000],
   channelCreate: ["📁", "Channel Create", 5, 10000],
@@ -293,8 +296,21 @@ function whitelistPanel(config) {
           .setStyle(ButtonStyle.Primary),
 
         new ButtonBuilder()
+          .setCustomId("antinuke_whitelist_remove_user")
+          .setLabel("Remove User")
+          .setEmoji("➖")
+          .setStyle(ButtonStyle.Secondary),
+
+        new ButtonBuilder()
+          .setCustomId("antinuke_whitelist_remove_role")
+          .setLabel("Remove Role")
+          .setEmoji("➖")
+          .setStyle(ButtonStyle.Secondary)
+      ),
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
           .setCustomId("antinuke_whitelist_clear")
-          .setLabel("Clear")
+          .setLabel("Clear All")
           .setEmoji("🗑️")
           .setStyle(ButtonStyle.Danger)
       ),
@@ -373,9 +389,20 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+    const isMainOwner =
+      extraOwnerManager.isMainOwner(interaction.user.id);
+
+    const isExtraOwner =
+      extraOwnerManager.isExtraOwner(interaction.user.id);
+
+    const isAdmin =
+      interaction.memberPermissions?.has(
+        PermissionFlagsBits.Administrator
+      );
+
+    if (!isAdmin && !isMainOwner && !isExtraOwner) {
       return interaction.reply({
-        content: "❌ Administrator permission required.",
+        content: "❌ Administrator or AntiNuke owner access required.",
         ephemeral: true
       });
     }
@@ -395,10 +422,25 @@ module.exports = {
       return false;
     }
 
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+    console.log(
+      `🛡️ AntiNuke Panel Interaction: ${interaction.customId} by ${interaction.user.tag || interaction.user.id}`
+    );
+
+    const isMainOwner =
+      extraOwnerManager.isMainOwner(interaction.user.id);
+
+    const isExtraOwner =
+      extraOwnerManager.isExtraOwner(interaction.user.id);
+
+    const isAdmin =
+      interaction.memberPermissions?.has(
+        PermissionFlagsBits.Administrator
+      );
+
+    if (!isAdmin && !isMainOwner && !isExtraOwner) {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
-          content: "❌ Administrator permission required.",
+          content: "❌ Administrator or AntiNuke owner access required.",
           ephemeral: true
         });
       }
@@ -505,6 +547,38 @@ module.exports = {
       );
     }
 
+    if (id === "antinuke_whitelist_remove_user") {
+      return interaction.reply({
+        content: "➖ Select a user to remove from AntiNuke whitelist:",
+        components: [
+          new ActionRowBuilder().addComponents(
+            new UserSelectMenuBuilder()
+              .setCustomId("antinuke_remove_user")
+              .setPlaceholder("Select whitelisted user")
+              .setMinValues(1)
+              .setMaxValues(1)
+          )
+        ],
+        ephemeral: true
+      });
+    }
+
+    if (id === "antinuke_whitelist_remove_role") {
+      return interaction.reply({
+        content: "➖ Select a role to remove from AntiNuke whitelist:",
+        components: [
+          new ActionRowBuilder().addComponents(
+            new RoleSelectMenuBuilder()
+              .setCustomId("antinuke_remove_role")
+              .setPlaceholder("Select whitelisted role")
+              .setMinValues(1)
+              .setMaxValues(1)
+          )
+        ],
+        flags: 64
+      });
+    }
+
     if (id === "antinuke_whitelist_user") {
       return interaction.reply({
         content: "👤 Select a user to trust:",
@@ -517,7 +591,7 @@ module.exports = {
               .setMaxValues(1)
           )
         ],
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -533,7 +607,7 @@ module.exports = {
               .setMaxValues(1)
           )
         ],
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -544,6 +618,42 @@ module.exports = {
       updateConfig(guildId, config);
 
       return interaction.update(whitelistPanel(config));
+    }
+
+    if (id === "antinuke_remove_user") {
+      const userId = interaction.values?.[0];
+
+      if (!userId) return true;
+
+      config.antiNuke.trustedUsers =
+        config.antiNuke.trustedUsers.filter(
+          id => id !== userId
+        );
+
+      updateConfig(guildId, config);
+
+      return interaction.update({
+        content: `✅ <@${userId}> removed from AntiNuke whitelist.`,
+        components: []
+      });
+    }
+
+    if (id === "antinuke_remove_role") {
+      const roleId = interaction.values?.[0];
+
+      if (!roleId) return true;
+
+      config.antiNuke.trustedRoles =
+        config.antiNuke.trustedRoles.filter(
+          id => id !== roleId
+        );
+
+      updateConfig(guildId, config);
+
+      return interaction.update({
+        content: `✅ <@&${roleId}> removed from AntiNuke whitelist.`,
+        components: []
+      });
     }
 
     if (id === "antinuke_select_user") {

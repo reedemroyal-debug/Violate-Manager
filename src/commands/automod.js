@@ -768,7 +768,7 @@ module.exports = {
             )
             .setDescription(
               `Current punishment: **${punishmentText(
-                config.punishments[ruleId]
+                config[RULES[ruleId].key]?.punishment
               )}**\n\nChoose what should happen when this rule is triggered.`
             )
             .setColor("#5865F2")

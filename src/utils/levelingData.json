@@ -1,0 +1,37 @@
+{
+  "1538572310083149945": {
+    "config": {
+      "enabled": true,
+      "minXP": 15,
+      "maxXP": 25,
+      "cooldown": 60000,
+      "levelUpChannel": "1538582705506226217",
+      "levelUpMessage": "🎉 Congratulations {user}! You reached **Level {level}**!",
+      "ignoredChannels": [],
+      "ignoredRoles": []
+    },
+    "users": {
+      "1350726344648036402": {
+        "xp": 112,
+        "level": 1,
+        "totalXp": 212,
+        "messages": 10,
+        "lastXpAt": 1790324835181
+      },
+      "1395760010717565038": {
+        "xp": 17,
+        "level": 0,
+        "totalXp": 17,
+        "messages": 1,
+        "lastXpAt": 1790262834886
+      },
+      "935825319418544209": {
+        "xp": 45,
+        "level": 0,
+        "totalXp": 45,
+        "messages": 2,
+        "lastXpAt": 1790324801637
+      }
+    }
+  }
+}

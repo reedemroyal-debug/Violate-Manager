@@ -172,6 +172,48 @@
         "by": "1538893203653263401",
         "reason": "AutoMod: Discord invite detected",
         "time": 1787725021839
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1788683816004
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1788683890774
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1350726344648036402",
+        "reason": "testing",
+        "time": 1788695326611
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1789221398152
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1789221430193
+      },
+      {
+        "guild": "1548331811111833693",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1789221590695
+      },
+      {
+        "guild": "1538572310083149945",
+        "by": "1538893203653263401",
+        "reason": "AutoMod: Discord invite detected",
+        "time": 1789883595711
       }
     ],
     "1481643463895420999": [
@@ -315,75 +357,7 @@
       "1525897250314784930": [
         {
           "reason": "Discord invite detected",
-          "time": 1787721224897
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787721291510
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787721307422
-        },
-        {
-          "reason": "Spam detected",
-          "time": 1787721332352
-        },
-        {
-          "reason": "Spam detected",
-          "time": 1787721333029
-        },
-        {
-          "reason": "Spam detected",
-          "time": 1787721333747
-        },
-        {
-          "reason": "Spam detected",
-          "time": 1787721334368
-        },
-        {
-          "reason": "Spam detected",
-          "time": 1787721336102
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787721864632
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787721912317
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787721960376
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787722489635
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787723485541
-        },
-        {
-          "reason": "Blocked word detected",
-          "time": 1787723538196
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787723556114
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787724001604
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787724603360
-        },
-        {
-          "reason": "Discord invite detected",
-          "time": 1787725020961
+          "time": 1789883595005
         }
       ]
     },
@@ -448,6 +422,14 @@
         {
           "reason": "Spam detected",
           "time": 1788491623271
+        }
+      ]
+    },
+    "1548331811111833693": {
+      "1525897250314784930": [
+        {
+          "reason": "Discord invite detected",
+          "time": 1789221590033
         }
       ]
     }

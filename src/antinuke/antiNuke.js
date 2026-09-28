@@ -76,12 +76,8 @@ function getGuildConfig(guild) {
 function isTrusted(member, config) {
   if (!member) return false;
 
-  if (
-    member.permissions.has(PermissionFlagsBits.Administrator)
-  ) {
-    return true;
-  }
-
+  // ONLY explicitly whitelisted users/roles are trusted.
+  // Administrator permission does NOT bypass AntiNuke.
   if (config.trustedUsers?.includes(member.id)) {
     return true;
   }
@@ -120,37 +116,61 @@ function clearUser(guildId, userId) {
 }
 
 async function getExecutor(guild, auditType, targetId = null) {
-  try {
-    const logs = await guild.fetchAuditLogs({
-      type: auditType,
-      limit: 10
-    });
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const logs = await guild.fetchAuditLogs({
+        type: auditType,
+        limit: 10
+      });
 
-    const now = Date.now();
+      const now = Date.now();
 
-    const entry = logs.entries.find(entry => {
-      if (now - entry.createdTimestamp > 15000) {
-        return false;
+      const entry = logs.entries.find(entry => {
+        if (now - entry.createdTimestamp > 15000) {
+          return false;
+        }
+
+        if (targetId && entry.target?.id !== targetId) {
+          return false;
+        }
+
+        return true;
+      });
+
+      if (entry?.executor) {
+        console.log(
+          `🔎 AntiNuke executor found: ${entry.executor.tag || entry.executor.id}`
+        );
+
+        return entry.executor;
       }
 
-      if (targetId && entry.target?.id !== targetId) {
-        return false;
+      if (attempt < 3) {
+        await new Promise(resolve =>
+          setTimeout(resolve, 700)
+        );
       }
 
-      return true;
-    });
+    } catch (error) {
+      console.error(
+        `❌ AntiNuke audit log attempt ${attempt} failed:`,
+        error.message
+      );
 
-    return entry?.executor || null;
-  } catch (error) {
-    console.error(
-      "❌ AntiNuke audit log error:",
-      error.message
-    );
-
-    return null;
+      if (attempt < 3) {
+        await new Promise(resolve =>
+          setTimeout(resolve, 700)
+        );
+      }
+    }
   }
-}
 
+  console.log(
+    `⚠️ AntiNuke could not find executor for audit type ${auditType}.`
+  );
+
+  return null;
+}
 async function punish(guild, executor, reason) {
   if (!executor || executor.bot) {
     return false;
@@ -158,19 +178,18 @@ async function punish(guild, executor, reason) {
 
   const config = getGuildConfig(guild);
 
-  let member =
+  const member =
     guild.members.cache.get(executor.id) ||
     await guild.members.fetch(executor.id).catch(() => null);
 
-  if (!member) {
+  if (!member || isTrusted(member, config)) {
     return false;
   }
 
-  if (isTrusted(member, config)) {
-    return false;
-  }
+  const punishment = config.punishment || {};
 
   let punished = false;
+  let actions = [];
 
   // Remove dangerous roles first
   try {
@@ -193,86 +212,197 @@ async function punish(guild, executor, reason) {
     }
   } catch {}
 
-  // Timeout first
-  try {
-    if (member.moderatable) {
-      await member.timeout(
-        60 * 60 * 1000,
-        `AntiNuke: ${reason}`
+  // Timeout
+  if (punishment.timeout) {
+    try {
+      if (member.moderatable) {
+        const minutes =
+          Math.max(
+            1,
+            Number(punishment.timeoutMinutes) || 30
+          );
+
+        await member.timeout(
+          minutes * 60 * 1000,
+          `AntiNuke: ${reason}`
+        );
+
+        punished = true;
+        actions.push(`Timeout ${minutes}m`);
+      }
+    } catch (error) {
+      console.error(
+        "❌ AntiNuke timeout failed:",
+        error.message
       );
-
-      punished = true;
     }
-  } catch (error) {
-    console.error(
-      "❌ AntiNuke timeout failed:",
-      error.message
-    );
   }
 
-  // Ban if possible
-  try {
-    if (member.bannable) {
-      await member.ban({
-        reason: `AntiNuke: ${reason}`
-      });
+  // Kick
+  if (punishment.kick) {
+    try {
+      if (member.kickable) {
+        await member.kick(
+          `AntiNuke: ${reason}`
+        );
 
-      punished = true;
+        punished = true;
+        actions.push("Kick");
+      }
+    } catch (error) {
+      console.error(
+        "❌ AntiNuke kick failed:",
+        error.message
+      );
     }
-  } catch (error) {
-    console.error(
-      "❌ AntiNuke ban failed:",
-      error.message
-    );
   }
+
+  // Ban
+  if (punishment.ban) {
+    try {
+      if (member.bannable) {
+        await member.ban({
+          reason: `AntiNuke: ${reason}`
+        });
+
+        punished = true;
+        actions.push("Ban");
+      }
+    } catch (error) {
+      console.error(
+        "❌ AntiNuke ban failed:",
+        error.message
+      );
+    }
+  }
+
+  const actionText =
+    actions.length > 0
+      ? actions.join(" + ")
+      : "Detection only";
 
   try {
     await sendDM({
       guild,
       target: executor,
-      action: "Ban",
+      action: actionText,
       reason: `AntiNuke: ${reason}`,
       moderator: guild.client.user
     });
   } catch {}
 
+  console.log(
+    `📋 AntiNuke logging: guild=${guild.id} type=antiNuke action=${actionText}`
+  );
+
   try {
-    await sendLog({
+    const logged = await sendLog({
       guild,
-      type: "security",
+      type: "antiNuke",
       title: "🚨 AntiNuke Triggered",
-      action: "BAN",
+      action: actionText,
       target: executor,
       moderator: guild.client.user,
-      reason
+      reason,
+      color: "#ED4245",
+      fields: [
+        {
+          name: "🎯 Executor",
+          value: `<@${executor.id}> ID: ${executor.id}`, 
+          inline: false
+        },
+        {
+          name: "🛡️ Action",
+          value: actionText,
+          inline: true
+        }
+      ]
     });
-  } catch {}
+
+    console.log(
+      logged
+        ? "✅ AntiNuke log sent successfully."
+        : "⚠️ AntiNuke log was not sent — check /logs antiNuke configuration."
+    );
+  } catch (error) {
+    console.error(
+      "❌ AntiNuke log failed:",
+      error
+    );
+  }
 
   return punished;
 }
 
 async function detect(guild, executor, type, limit, reason) {
-  if (!executor) return;
+  if (!executor || executor.bot) {
+    return;
+  }
 
   const config = getGuildConfig(guild);
 
-  if (!config.enabled) return;
+  if (!config.enabled) {
+    return;
+  }
 
-  if (executor.bot) return;
+  const rule = config[type];
+
+  if (!rule || rule.enabled === false) {
+    return;
+  }
 
   const member =
     guild.members.cache.get(executor.id) ||
     await guild.members.fetch(executor.id).catch(() => null);
 
-  if (!member || isTrusted(member, config)) {
+  if (!member) {
     return;
   }
+
+  if (isTrusted(member, config)) {
+    console.log(
+      `🛡️ AntiNuke trusted user detected: ${executor.tag || executor.id}`
+    );
+
+    await sendLog({
+      guild,
+      type: "antiNuke",
+      title: "🛡️ AntiNuke Trusted Activity",
+      action: "Detection ignored",
+      target: executor,
+      moderator: guild.client.user,
+      reason: `${reason} — trusted user/admin, punishment skipped.`
+    }).catch(error => {
+      console.error(
+        "❌ Trusted AntiNuke log failed:",
+        error.message
+      );
+    });
+
+    return;
+  }
+
+  const maxActions = Math.max(
+    1,
+    Number(rule.maxActions) || Number(limit) || 3
+  );
+
+  const interval = Math.max(
+    1000,
+    Number(rule.interval) || WINDOW
+  );
 
   const result = recordAction(
     guild.id,
     executor.id,
     type,
-    limit
+    maxActions,
+    interval
+  );
+
+  console.log(
+    `🚨 AntiNuke ${type}: ${executor.tag || executor.id} ` +
+    `(${result.count}/${maxActions} in ${interval}ms)`
   );
 
   if (!result.triggered) {
@@ -282,12 +412,11 @@ async function detect(guild, executor, type, limit, reason) {
   await punish(
     guild,
     executor,
-    `${reason} (${result.count} actions in ${WINDOW / 1000}s)`
+    `${reason} (${result.count} actions in ${interval / 1000}s)`
   );
 
   clearUser(guild.id, executor.id);
 }
-
 async function channelDelete(channel) {
   const guild = channel.guild;
   if (!guild) return;

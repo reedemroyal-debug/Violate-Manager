@@ -17,6 +17,8 @@ const COLORS = {
   BLACK: 0x000000
 };
 
+const { replaceExternalEmojis } = require("../utils/liveEmoji");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("message")
@@ -71,6 +73,8 @@ module.exports = {
 
     const channel = interaction.options.getChannel("channel");
     const message = interaction.options.getString("message");
+    const liveMessage = await replaceExternalEmojis(interaction.guild, message);
+    console.log("🧪 MESSAGE INPUT:", JSON.stringify(message));
     const color = interaction.options.getString("color");
 
     if (!channel.isTextBased()) {
@@ -80,9 +84,11 @@ module.exports = {
       });
     }
 
+    console.log("🧪 RAW MESSAGE:", JSON.stringify(message));
     const embed = new EmbedBuilder()
-      .setDescription(message)
+      .setDescription(liveMessage)
       .setColor(COLORS[color] ?? COLORS.BLUE);
+    console.log("🧪 EMBED DESCRIPTION:", JSON.stringify(embed.data.description));
 
     await channel.send({
       embeds: [embed]

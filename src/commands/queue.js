@@ -1,6 +1,5 @@
-const {
-  SlashCommandBuilder
-} = require("discord.js");
+
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,38 +8,33 @@ module.exports = {
 
   async execute(interaction) {
     const queue =
-      interaction.client.musicPlayer.nodes.get(
+      interaction.client.musicPlayer?.nodes.get(
         interaction.guild.id
       );
 
-    if (!queue || !queue.currentTrack) {
+    if (!queue?.currentTrack) {
       return interaction.reply({
         content: "📭 Queue empty hai.",
         ephemeral: true
       });
     }
 
-    const tracks =
-      queue.tracks.toArray();
+    const tracks = queue.tracks.toArray();
 
-    const current =
-      queue.currentTrack;
-
-    let text =
-      `🎵 **Now Playing:** ${current.title}\n\n`;
-
-    if (!tracks.length) {
-      text += "📭 No more songs in queue.";
-    } else {
-      text += tracks
-        .slice(0, 10)
-        .map(
-          (track, index) =>
-            `**${index + 1}.** ${track.title}`
+    const embed = new EmbedBuilder()
+      .setColor(0x5865f2)
+      .setTitle("📜 Music Queue")
+      .setDescription(
+        `🎵 **Now Playing:** ${queue.currentTrack.title}\n\n` +
+        (
+          tracks.length
+            ? tracks.slice(0, 15)
+                .map((t, i) => `**${i + 1}.** ${t.title}`)
+                .join("\n")
+            : "📭 No more songs in queue."
         )
-        .join("\n");
-    }
+      );
 
-    return interaction.reply(text);
+    return interaction.reply({ embeds: [embed] });
   }
 };

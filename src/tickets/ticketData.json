@@ -1,0 +1,27 @@
+{
+  "guilds": {
+    "1538572310083149945": {
+      "enabled": true,
+      "panel": {
+        "title": "# <a:Arrow_Red:1354392969251127326>  VIOLATE GAMINGZ — TICKET SUPPORT",
+        "description": "Need help? Open a ticket and select the category that best matches your request.\n\n__**<a:hyper_staff:1494202473340993588>  GENERAL SUPPORT**__\n\nFor general questions, server issues, technical problems, or any other assistance related to VIOLATE GAMINGZ.\n\n__**<a:alert:1507979606429536327>  REPORT PLAYER**__\n\nFound a player breaking the rules? Open a ticket and provide their username, reason, and valid proof/evidence so our staff can review the report.\n\n__**<a:red_check:1419741525847310336>  PARTNERSHIP**__\n\nInterested in partnering with VIOLATE GAMINGZ? Open a ticket to discuss partnership opportunities, requirements, and collaborations.\n\n__**<a:ustawienia:1507979590801424465>  STAFF APPLICATION**__\n\nWant to join the VIOLATE GAMINGZ staff team? Open a ticket to apply and provide the required information.\n\n«<:emoji_41:1507951442214785055>  Please select the correct category and provide clear information so our staff can assist you efficiently.»",
+        "color": "#5865F2",
+        "image": "https://cdn.discordapp.com/attachments/1438869477264588901/1548313924779376821/file_00000000ee70820888d9f4a6f7ea131d.png?ex=6aa69b35&is=6aa549b5&hm=3386576cd4f3d30c3c9c9b1154de4e62af7610148d3b6121b880ad5e109df2ec&",
+        "thumbnail": null,
+        "channelId": "1538575640335482914"
+      },
+      "categories": {
+        "cat_1789222962685_mnl3r": {
+          "id": "cat_1789222962685_mnl3r",
+          "name": "Genral support",
+          "emoji": "<a:hyper_staff:1548311990844399776>",
+          "description": "1. What",
+          "questions": []
+        }
+      },
+      "ticketCategoryId": "1538827501344784521",
+      "staffRoleId": "1538728266016497724",
+      "logChannelId": null
+    }
+  }
+}

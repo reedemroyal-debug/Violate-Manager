@@ -1,6 +1,9 @@
+const vmGlobalPanel=require("./voicemaster/globalPanel");
+const voiceMasterStaff = require("./voicemaster/staff");
 const ticketSystem = require("./events/ticketSystem");
 const antiNukeCommand = require("./commands/antinuke");
 const autoModCommand = require("./commands/automod");
+const logsCommand = require("./commands/logs");
 const festival = require("./events/festival");
 require("dotenv").config();
 
@@ -24,6 +27,11 @@ const autoMod = require("./automod/autoMod");
 const antiNuke = require("./antinuke/antiNuke");
 const autoRole = require("./events/autorole");
 const autoResponder = require("./events/autoresponder");
+const memberLogs = require("./events/memberLogs");
+const voiceLogs = require("./events/voiceLogs");
+const voiceMaster = require("./events/voiceMaster");
+const channelLogs = require("./events/channelLogs");
+const messageLogs = require("./events/messageLogs");
 
 
 // =====================================
@@ -258,8 +266,45 @@ client.on(
 // READY
 // =====================================
 
+
+client.on("voiceStateUpdate", async (oldState, newState) => {
+  try {
+    const guild = newState.guild || oldState.guild;
+    if (!guild) return;
+
+    const cfg = voiceMasterStaff.get(guild.id);
+    if (!cfg?.enabled || !cfg.roleId) return;
+
+    const role = guild.roles.cache.get(cfg.roleId);
+    if (!role) return;
+
+    const category = guild.channels.cache.find(
+      c =>
+        c.type === 4 &&
+        c.name === "༺🔊 VIOLATE VC MASTER ༻"
+    );
+
+    if (!category) return;
+
+    for (const channel of category.children.cache.values()) {
+      if (channel.type !== 2) continue;
+      if (channel.name === "ᴊᴏɪɴ・ᴛᴏ・ᴄʀᴇᴀᴛᴇ") continue;
+
+      await channel.permissionOverwrites.edit(role.id, {
+        ViewChannel: true,
+        Connect: true
+      }).catch(() => {});
+    }
+  } catch {}
+});
+
 client.once("ready", async () => {
   festival.init(client);
+  memberLogs.init(client);
+  voiceLogs.init(client);
+  voiceMaster.init(client);
+  channelLogs.init(client);
+  messageLogs.init(client);
   console.log(
     `🤖 Logged in as ${client.user.tag}`
   );
@@ -278,8 +323,9 @@ client.once("ready", async () => {
     );
 
     await rest.put(
-      Routes.applicationCommands(
-        process.env.CLIENT_ID
+      Routes.applicationGuildCommands(
+        process.env.CLIENT_ID,
+        process.env.GUILD_ID
       ),
       {
         body: commands
@@ -337,10 +383,57 @@ client.on(
 
       if (
         interaction.isStringSelectMenu() ||
-        interaction.isButton()
+        interaction.isButton() ||
+        interaction.isRoleSelectMenu() ||
+        interaction.isChannelSelectMenu() ||
+        interaction.isModalSubmit()
       ) {
         const handled =
           await ticketSystem.handleInteraction(interaction);
+
+        if (handled) return;
+      }
+
+      // =================================
+      // AUTOMOD PANEL
+      // =================================
+
+      if (
+        interaction.isButton() ||
+        interaction.isModalSubmit() ||
+        interaction.isStringSelectMenu()
+      ) {
+        const handled =
+          await autoModCommand.handle(interaction);
+
+        if (handled) return;
+      }
+
+      // =================================
+      // ANTINUKE PANEL
+      // =================================
+
+      if (
+        interaction.isButton() ||
+        interaction.isModalSubmit() ||
+        interaction.isStringSelectMenu()
+      ) {
+        const handled =
+          await antiNukeCommand.handle?.(interaction);
+
+        if (handled) return;
+      }
+
+      // =================================
+      // LOGS PANEL
+      // =================================
+
+      if (
+        interaction.isButton() ||
+        interaction.isChannelSelectMenu()
+      ) {
+        const handled =
+          await logsCommand.handleInteraction(interaction);
 
         if (handled) return;
       }
@@ -393,8 +486,129 @@ client.on(
 );
 
 // =====================================
+// EXTRA OWNER COMMANDS
+// =====================================
+
+const extraOwnerManager =
+  require("./utils/extraOwnerManager");
+
+client.on("messageCreate", async message => {
+  try {
+    if (!message.guild || message.author.bot) return;
+
+    const content = message.content.trim();
+
+    if (!content.toLowerCase().startsWith("!extraowner")) {
+      return;
+    }
+
+    // ONLY MAIN BOT OWNER
+    if (!extraOwnerManager.isMainOwner(message.author.id)) {
+      await message.reply(
+        "❌ Only the main bot owner can manage Extra Owners."
+      );
+      return;
+    }
+
+    const args = content.split(/\s+/);
+    const action = args[1]?.toLowerCase();
+
+    if (action === "add") {
+      const member =
+        message.mentions.members.first();
+
+      if (!member) {
+        await message.reply(
+          "❌ Usage: `!extraowner add @user`"
+        );
+        return;
+      }
+
+      if (extraOwnerManager.isMainOwner(member.id)) {
+        await message.reply(
+          "ℹ️ You are already the Main Bot Owner."
+        );
+        return;
+      }
+
+      if (extraOwnerManager.add(member.id)) {
+        await message.reply(
+          `✅ ${member} is now an **Extra Owner**.`
+        );
+      } else {
+        await message.reply(
+          `ℹ️ ${member} is already an Extra Owner.`
+        );
+      }
+
+      return;
+    }
+
+    if (action === "remove") {
+      const member =
+        message.mentions.members.first();
+
+      if (!member) {
+        await message.reply(
+          "❌ Usage: `!extraowner remove @user`"
+        );
+        return;
+      }
+
+      if (extraOwnerManager.remove(member.id)) {
+        await message.reply(
+          `✅ ${member} has been removed from Extra Owners.`
+        );
+      } else {
+        await message.reply(
+          `ℹ️ ${member} is not an Extra Owner.`
+        );
+      }
+
+      return;
+    }
+
+    if (action === "list") {
+      const users = extraOwnerManager.list();
+
+      if (!users.length) {
+        await message.reply(
+          "📋 No Extra Owners are currently configured."
+        );
+        return;
+      }
+
+      const list = users
+        .map((id, index) => `${index + 1}. <@${id}>`)
+        .join("\n");
+
+      await message.reply(
+        `👑 **Extra Owners**\n\n${list}`
+      );
+
+      return;
+    }
+
+    await message.reply(
+      "❌ Usage:\n" +
+      "`!extraowner add @user`\n" +
+      "`!extraowner remove @user`\n" +
+      "`!extraowner list`"
+    );
+
+  } catch (error) {
+    console.error(
+      "❌ Extra Owner Error:",
+      error
+    );
+  }
+});
+
+// =====================================
 // LOGIN
 // =====================================
+
+
 
 client.login(
   process.env.DISCORD_TOKEN
@@ -409,4 +623,136 @@ client.login(
     "❌ Login failed:",
     error.message
   );
+});
+
+
+/* ================================
+   VIOLATE MANAGER LEVELING SYSTEM
+   ================================ */
+try {
+  const leveling = require("./utils/leveling");
+
+  client.on("messageCreate", async (message) => {
+    try {
+      await leveling.handleMessage(message);
+    } catch (error) {
+      console.error("❌ Leveling error:", error);
+    }
+  });
+
+  console.log("🎮 Leveling system loaded.");
+} catch (error) {
+  console.error("❌ Failed to load Leveling system:", error);
+}
+
+
+/* =================================
+   VIOLATE YOUTUBE RSS ANNOUNCER
+   ================================= */
+try {
+  const ytAnnounce = require("./ytannonce/manager");
+  ytAnnounce.init(client);
+} catch (error) {
+  console.error("❌ YouTube RSS announcer failed:", error);
+}
+
+
+// VIOLATE MUSIC BUTTON HANDLER
+client.on("interactionCreate", async interaction => {
+  if (!interaction.isButton()) return;
+
+  const ids = [
+    "music_pause",
+    "music_skip",
+    "music_stop",
+    "music_shuffle",
+    "music_loop",
+    "music_queue",
+    "music_vol_down",
+    "music_vol_up"
+  ];
+
+  if (!ids.includes(interaction.customId)) return;
+
+  try {
+    const { musicAction } = require("./music/player");
+
+    const action = interaction.customId.replace("music_", "");
+
+    await musicAction(interaction, action);
+  } catch (error) {
+    console.error("❌ Music button error:", error);
+
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
+          content: "❌ Music button failed."
+        });
+      } else {
+        await interaction.reply({
+          content: "❌ Music button failed.",
+          ephemeral: true
+        });
+      }
+    } catch {}
+  }
+});
+
+// Real API heartbeat/ping logging
+setInterval(() => {
+  const ping = client.ws.ping;
+
+  if (Number.isFinite(ping) && ping >= 0) {
+    console.log(`📡 Discord WebSocket: ${ping}ms`);
+  }
+}, 30000);
+
+
+client.on("voiceStateUpdate", async (oldState, newState) => {
+  try {
+    const guild = newState.guild || oldState.guild;
+    if (!guild) return;
+
+    await voiceMasterStaff.applyStaffAccess(guild);
+    await voiceMasterStaff.refreshPanel(guild);
+  } catch {}
+});
+
+client.on("interactionCreate", async interaction => {
+  try {
+    if (interaction.isModalSubmit()) {
+      const handled = await voiceMasterStaff.handleModal(interaction);
+      if (handled) return;
+    }
+
+    if (
+      interaction.isButton() ||
+      interaction.isStringSelectMenu()
+    ) {
+      const handled = await voiceMasterStaff.handle(interaction);
+      if (handled) return;
+    }
+  } catch (err) {
+    console.error("❌ VoiceMaster Staff:", err);
+  }
+});
+
+
+client.on("interactionCreate",async interaction=>{
+ try{
+  if(interaction.isModalSubmit()){
+   if(await vmGlobalPanel.modal(interaction))return;
+  }
+  if(interaction.isButton()||interaction.isStringSelectMenu()){
+   if(await vmGlobalPanel.handle(interaction))return;
+  }
+ }catch(e){console.error("VC Global Panel:",e)}
+});
+
+client.on("voiceStateUpdate",async(oldState,newState)=>{
+ try{
+  const guild=newState.guild||oldState.guild;
+  if(!guild)return;
+  await vmGlobalPanel.panel(guild);
+ }catch{}
 });
